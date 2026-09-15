@@ -7,9 +7,9 @@
   ],
   "main": ".output/server/index.mjs",
   "assets": {
-    "directory": "dist/client",
-    "observability": { "enabled": true }
+    "directory": "dist/client"
   },
+  "observability": { "enabled": true },
   "images": {
     "binding": "IMAGES"
   },
