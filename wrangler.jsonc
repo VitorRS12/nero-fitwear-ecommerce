@@ -5,11 +5,10 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "main": "vinext/server/fetch-handler",
+  "main": ".output/server/index.mjs",
   "assets": {
     "directory": "dist/client",
-    "not_found_handling": "none",
-    "binding": "ASSETS"
+    "observability": { "enabled": true }
   },
   "images": {
     "binding": "IMAGES"
