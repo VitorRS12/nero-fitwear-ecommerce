@@ -5,12 +5,13 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "vite";
-import tailwindcss from "tailwindcss/vite"
+import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import { nitro } from "nitro/vite"
+import { nitro } from "nitro/vite";
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     tanstackStart(),
     nitro(),
   ],
