@@ -4,5 +4,11 @@
   "main": "@tanstack/react-start/server-entry",
   "compatibility_date": "2026-09-15",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  "vars": {
+    "SUPABASE_PUBLISHABLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzbGdxd21xcXNuZHh5cndxd2ZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzOTA3MzksImV4cCI6MjEwMzk2NjczOX0.LTKnxrAYg1Z2tb1YT2xC_0Os1I2CNoPekXkXlRC_Ogo",
+    "SUPABASE_URL": "https://eslgqwmqqsndxyrwqwfe.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzbGdxd21xcXNuZHh5cndxd2ZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzOTA3MzksImV4cCI6MjEwMzk2NjczOX0.LTKnxrAYg1Z2tb1YT2xC_0Os1I2CNoPekXkXlRC_Ogo",
+    "VITE_SUPABASE_URL": "https://eslgqwmqqsndxyrwqwfe.supabase.co"
+  },
 }
