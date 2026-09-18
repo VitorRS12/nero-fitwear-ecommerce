@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { Analytics } from "@vercel/analytics/react"
 import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/providers/cart-provider";
 import { RouteLoadingOverlay } from "@/components/layout/RouteLoadingOverlay";
@@ -138,6 +139,7 @@ function RootComponent() {
         <Outlet />
         <RouteLoadingOverlay />
         <Toaster position="top-center" />
+        <Analytics />
       </CartProvider>
     </QueryClientProvider>
   );
