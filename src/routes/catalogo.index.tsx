@@ -11,7 +11,7 @@ interface CatalogSearch {
   novidades?: boolean | undefined;
 }
 
-export const Route = createFileRoute("/catalogoindex/")({
+export const Route = createFileRoute("/catalogo/")({
   validateSearch: (search: Record<string, unknown>): CatalogSearch => ({
     busca: typeof search["busca"] === "string" && search["busca"] ? search["busca"] : undefined,
     novidades: search["novidades"] === true || search["novidades"] === "true" ? true : undefined,

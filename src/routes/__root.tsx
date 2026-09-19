@@ -10,7 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import { Analytics } from "@vercel/analytics/react"
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "../components/ui/sonner";
 import { CartProvider } from "@/providers/cart-provider";
 import { RouteLoadingOverlay } from "@/components/layout/RouteLoadingOverlay";
 

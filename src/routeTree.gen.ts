@@ -18,8 +18,8 @@ import { Route as ContaRouteImport } from './routes/conta'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as EntregaRouteImport } from './routes/entrega'
 import { Route as TrocasRouteImport } from './routes/trocas'
+import { Route as CatalogoIndexRouteImport } from './routes/catalogo.index'
 import { Route as CatalogoCategoriaRouteImport } from './routes/catalogo.$categoria'
-import { Route as CatalogoindexRouteImport } from './routes/catalogoindex.'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
@@ -73,14 +73,14 @@ const TrocasRoute = TrocasRouteImport.update({
   path: '/trocas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CatalogoIndexRoute = CatalogoIndexRouteImport.update({
+  id: '/catalogo/',
+  path: '/catalogo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogoCategoriaRoute = CatalogoCategoriaRouteImport.update({
   id: '/catalogo/$categoria',
   path: '/catalogo/$categoria',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CatalogoindexRoute = CatalogoindexRouteImport.update({
-  id: '/catalogoindex/',
-  path: '/catalogoindex/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
@@ -138,9 +138,9 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
   '/trocas': typeof TrocasRoute
-  '/catalogoindex/': typeof CatalogoindexRoute
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/catalogo/': typeof CatalogoIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -158,9 +158,9 @@ export interface FileRoutesByTo {
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
   '/trocas': typeof TrocasRoute
-  '/catalogoindex': typeof CatalogoindexRoute
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/catalogo': typeof CatalogoIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -180,9 +180,9 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
   '/trocas': typeof TrocasRoute
-  '/catalogoindex/': typeof CatalogoindexRoute
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/catalogo/': typeof CatalogoIndexRoute
   '/_authenticated/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/_authenticated/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -202,9 +202,9 @@ export interface FileRouteTypes {
     | '/contato'
     | '/entrega'
     | '/trocas'
-    | '/catalogoindex/'
     | '/catalogo/$categoria'
     | '/produto/$slug'
+    | '/catalogo/'
     | '/admin/categorias'
     | '/admin/tela-inicial'
     | '/admin/'
@@ -222,9 +222,9 @@ export interface FileRouteTypes {
     | '/contato'
     | '/entrega'
     | '/trocas'
-    | '/catalogoindex'
     | '/catalogo/$categoria'
     | '/produto/$slug'
+    | '/catalogo'
     | '/admin/categorias'
     | '/admin/tela-inicial'
     | '/admin'
@@ -243,9 +243,9 @@ export interface FileRouteTypes {
     | '/contato'
     | '/entrega'
     | '/trocas'
-    | '/catalogoindex/'
     | '/catalogo/$categoria'
     | '/produto/$slug'
+    | '/catalogo/'
     | '/_authenticated/admin/categorias'
     | '/_authenticated/admin/tela-inicial'
     | '/_authenticated/admin/'
@@ -265,9 +265,9 @@ export interface RootRouteChildren {
   ContatoRoute: typeof ContatoRoute
   EntregaRoute: typeof EntregaRoute
   TrocasRoute: typeof TrocasRoute
-  CatalogoindexRoute: typeof CatalogoindexRoute
   CatalogoCategoriaRoute: typeof CatalogoCategoriaRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
+  CatalogoIndexRoute: typeof CatalogoIndexRoute
   ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
 }
 
@@ -336,18 +336,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrocasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/catalogo/': {
+      id: '/catalogo/'
+      path: '/catalogo'
+      fullPath: '/catalogo/'
+      preLoaderRoute: typeof CatalogoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalogo/$categoria': {
       id: '/catalogo/$categoria'
       path: '/catalogo/$categoria'
       fullPath: '/catalogo/$categoria'
       preLoaderRoute: typeof CatalogoCategoriaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/catalogoindex/': {
-      id: '/catalogoindex/'
-      path: '/catalogoindex'
-      fullPath: '/catalogoindex/'
-      preLoaderRoute: typeof CatalogoindexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/produto/$slug': {
@@ -440,9 +440,9 @@ const rootRouteChildren: RootRouteChildren = {
   ContatoRoute: ContatoRoute,
   EntregaRoute: EntregaRoute,
   TrocasRoute: TrocasRoute,
-  CatalogoindexRoute: CatalogoindexRoute,
   CatalogoCategoriaRoute: CatalogoCategoriaRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
+  CatalogoIndexRoute: CatalogoIndexRoute,
   ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
 }
 export const routeTree = rootRouteImport
