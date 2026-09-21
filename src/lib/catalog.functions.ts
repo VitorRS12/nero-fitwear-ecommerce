@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import type { Database } from "@/integrations/supabase/types";
 
+
 /**
  * Camada de leitura pública do catálogo.
  * Roda no servidor (SSR + SEO) com a chave publicável e respeita as
@@ -28,7 +29,7 @@ function createPublicClient() {
   });
 }
 
-const PRODUCT_SELECT = `
+const ADMIN_PRODUCT_SELECT = `
   id, name, slug, short_description, description, base_price, sale_price,
   is_featured, is_new, category_id, created_at,
   product_images ( id, url, alt, color, position ),

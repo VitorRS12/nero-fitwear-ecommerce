@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 import {
   adminGetProduct,
   adminIsAdmin,
+  adminListCategories,
   adminListProducts,
   adminTaxonomy,
 } from "@/lib/admin-catalog.functions";
@@ -53,6 +54,14 @@ export interface TaxonomyItem {
   is_active: boolean;
 }
 
+export interface AdminCategory extends TaxonomyItem {
+  description: string | null;
+  image_url: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export const isAdminQuery = () =>
   queryOptions({
     queryKey: ["admin", "is-admin"],
@@ -84,4 +93,11 @@ export const adminTaxonomyQuery = () =>
         collections: TaxonomyItem[];
       },
     staleTime: 5 * 60 * 1000,
+  });
+
+export const adminCategoriesQuery = () =>
+  queryOptions({
+    queryKey: ["admin", "categories"],
+    queryFn: async () => (await adminListCategories()) as unknown as AdminCategory[],
+    staleTime: 10 * 1000,
   });

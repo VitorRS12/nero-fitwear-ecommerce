@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, Search, ShoppingBag, User } from "lucide-react";
 import { useState } from "react";
 
@@ -15,6 +15,9 @@ interface HeaderProps {
 export function Header({ categories }: HeaderProps) {
   const { totals, isHydrated } = useCart();
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [ searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   const navLinks = (
     <>
@@ -40,6 +43,16 @@ export function Header({ categories }: HeaderProps) {
       ))}
     </>
   );
+
+  const submitSearch = (event: React.FormEvent) => {
+  event.preventDefault();
+  const busca = searchTerm.trim();
+  setSearchOpen(false);
+  void navigate({
+    to: "/catalogo",
+    search: busca ? { busca } : {},
+  });
+};
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
@@ -69,14 +82,11 @@ export function Header({ categories }: HeaderProps) {
         </nav>
 
         <div className="flex items-center gap-1">
-
-          {/* Formato será aplicado brevemente...*/}
-          
-          {/*<Button variant="ghost" size="icon" asChild aria-label="Buscar produtos">
+        <Button variant="ghost" size="icon" asChild aria-label="Buscar produtos">
             <Link to="/catalogo" search={{ busca: "" }}>
               <Search className="size-5" />
             </Link>
-          </Button>*/}
+          </Button>
           <Button variant="ghost" size="icon" asChild aria-label="Minha conta">
             <Link to="/conta">
               <User className="size-5" />

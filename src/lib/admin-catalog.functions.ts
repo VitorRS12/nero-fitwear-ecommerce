@@ -4,13 +4,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
-import {
-  PRODUCT_IMAGE_BUCKET,
-  slugify,
-  storagePathToUrl,
-  urlToStoragePath,
-} from "@/lib/product-images";
-import { Description } from "@radix-ui/react-alert-dialog";
+import { PRODUCT_IMAGE_BUCKET, storagePathToUrl, urlToStoragePath } from "@/lib/product-images";
 
 /**
  * Camada de escrita do catálogo (área restrita).
@@ -22,6 +16,7 @@ type AuthedContext = {
   supabase: SupabaseClient<Database>;
   userId: string;
 };
+
 
 async function assertAdmin(context: AuthedContext) {
   const { data, error } = await context.supabase.rpc("has_role", {
@@ -89,6 +84,51 @@ export const adminTaxonomy = createServerFn({ method: "GET" })
     if (categories.error) throw new Error(categories.error.message);
     if (collections.error) throw new Error(collections.error.message);
     return { categories: categories.data ?? [], collections: collections.data ?? [] };
+  });
+
+export const adminListCategories = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as AuthedContext;
+    await assertAdmin(ctx);
+    const { data, error } = await ctx.supabase
+      .from("categories")
+      .select("id, name, slug, description, image_url, position, is_active, created_at, updated_at")
+      .order("position", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+const categorySchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(2).max(100),
+  slug: z.string().trim().min(2).max(120),
+  description: z.string().trim().max(500).nullable(),
+  position: z.number().int().min(0),
+  is_active: z.boolean(),
+});
+
+export const adminSaveCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => categorySchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const ctx = context as AuthedContext;
+    await assertAdmin(ctx);
+    const payload = {
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      position: data.position,
+      is_active: data.is_active,
+    };
+    const query = data.id
+      ? ctx.supabase.from("categories").update(payload).eq("id", data.id)
+      : ctx.supabase.from("categories").insert(payload);
+    const { error } = await query;
+    if (error?.code === "23505") throw new Error("Já existe uma categoria com esse endereço.");
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 const variantSchema = z.object({
@@ -302,6 +342,7 @@ export const adminUpdateImage = createServerFn({ method: "POST" })
     if (data.color !== undefined) patch.color = data.color;
     if (Object.keys(patch).length === 0) return { ok: true };
 
+
     const { error } = await ctx.supabase.from("product_images").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -331,7 +372,9 @@ export const adminDeleteImage = createServerFn({ method: "POST" })
 export const adminReorderImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ productId: z.string().uuid(), ids: z.array(z.string().uuid()).min(1) }).parse(input),
+    z
+      .object({ productId: z.string().uuid(), ids: z.array(z.string().uuid()).min(1) })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
@@ -436,98 +479,6 @@ export const adminDeleteHomeMedia = createServerFn({ method: "POST" })
     if (path) await ctx.supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([path]);
 
     const { error } = await ctx.supabase.from("home_media").delete().eq("slot", data.slot);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-/* ------------ Categorias ------------*/
-
-export const adminListCategories = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const ctx = context as AuthedContext;
-    await assertAdmin(ctx);
-    const { data, error } = await ctx.supabase
-      .from("categories")
-      .select("id, name, slug, description, image_url, position, is_active")
-      .order("position", { ascending: true });
-    if (error) throw new Error(error.message);
-    return data ?? [];
-  });
-
-const categoryUpdateSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(2).optional(),
-  slug: z.string().min(2).optional(),
-  description: z.string().nullable().optional(),
-});
-
-export const adminUpdateCategory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => categoryUpdateSchema.parse(input))
-  .handler(async ({ data, context }) => {
-    const ctx = context as AuthedContext;
-    await assertAdmin(ctx);
-
-    const patch: { name?: string; slug?: string; description?: string | null } = {};
-    if (data.name !== undefined) patch.name = data.name;
-    if (data.slug !== undefined) patch.slug = data.slug;
-    if (data.description !== undefined) patch.description = data.description;
-    if (Object.keys(patch).length === 0) return { ok: true };
-
-    const { error } = await ctx.supabase.from("categories").update(patch).eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-export const adminSetCategoryImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ id: z.string().uuid(), path: z.string().min(1) }).parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const ctx = context as AuthedContext;
-    await assertAdmin(ctx);
-
-    const { data: current } = await ctx.supabase
-      .from("categories")
-      .select("image_url")
-      .eq("id", data.id)
-      .maybeSingle();
-    const previousPath = current?.image_url ? urlToStoragePath(current.image_url) : null;
-
-    const { error } = await ctx.supabase
-      .from("categories")
-      .update({ image_url: storagePathToUrl(data.path) })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-
-    // A imagem anterior da categoria sai do armazenamento.
-    if (previousPath && previousPath !== data.path) {
-      await ctx.supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([previousPath]);
-    }
-    return { ok: true };
-  });
-
-export const adminRemoveCategoryImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ data, context }) => {
-    const ctx = context as AuthedContext;
-    await assertAdmin(ctx);
-
-    const { data: current } = await ctx.supabase
-      .from("categories")
-      .select("image_url")
-      .eq("id", data.id)
-      .maybeSingle();
-    const path = current?.image_url ? urlToStoragePath(current.image_url) : null;
-    if (path) await ctx.supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([path]);
-
-    const { error } = await ctx.supabase
-      .from("categories")
-      .update({ image_url: null })
-      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

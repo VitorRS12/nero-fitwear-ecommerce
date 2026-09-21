@@ -206,10 +206,15 @@ function ProductPage() {
                   const stock = stockForSize(value);
                   return (
                     <button
-                      key={value}
                       type="button"
                       disabled={stock < 1}
                       aria-pressed={size === value}
+                      aria-label={
+                        stock < 1 
+                          ? `Tamanho ${value}, esgotado`
+                          : `Selecionar tamanho ${value}`
+                      }
+                      title={ stock < 1 ? "Tamanho esgotado" : undefined}
                       onClick={() => setSize(value)}
                       className={cn(
                         "min-w-14 border px-4 py-2.5 text-sm font-semibold transition-colors",
