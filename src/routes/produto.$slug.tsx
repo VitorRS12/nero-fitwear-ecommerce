@@ -65,20 +65,49 @@ function ProductPage() {
     () =>
       Array.from(
         new Map(
-          variants.filter((v) => v.color).map((v) => [v.color as string, v.color_hex ?? "#8A8A8A"]),
+          variants
+          .filter((v) => v.color)
+          .map((v) => [
+            v.color as string, 
+            v.color_hex ?? "#8A8A8A"] as const),
         ),
       ),
     [variants],
   );
+
+  const deafaultColor = useMemo(
+    () => 
+      colors.find(([name]) =>
+        variants.some(
+          (variant) => variant.color === name && variant.stock > 0,
+        ),
+    )?.[0] ?? colors[0]?.[0] ?? null,
+  [colors, variants]
+);
+
+  const selectedColor = color ?? deafaultColor;
+
   const sizes = useMemo(
-    () => Array.from(new Set(variants.filter((v) => v.size).map((v) => v.size as string))),
-    [variants],
+    () => 
+      Array.from(
+        new Set(
+          variants
+            .filter(
+              (variant) => variant.size && (selectedColor === null || variant.color === selectedColor),
+            )
+            .map((variant) => variant.size as string),
+          ),
+      ),
+    [variants, selectedColor],
   );
 
   if (!product) return <ProductNotFound />;
 
-  const selectedColor = color ?? colors[0]?.[0] ?? null;
-  const variant = variants.find((v) => v.color === selectedColor && v.size === size) ?? null;
+  const variant = variants.find((item) => {
+    const colorMatches = colors.length === 0 || item.color === selectedColor;
+    const sizeMatches = sizes.length === 0 || item.size === size;
+    return colorMatches && sizeMatches;
+  }) ?? null; 
   const allImages = [...(product.product_images ?? [])].sort((a, b) => a.position - b.position);
   const colorImages = allImages.filter((image) => image.color === selectedColor);
   const images = colorImages.length > 0 ? colorImages : allImages;
@@ -89,12 +118,12 @@ function ProductPage() {
     variants.find((v) => v.color === selectedColor && v.size === value)?.stock ?? 0;
 
   const handleAdd = () => {
-    if (!size || !variant) {
+    if (sizes.length > 0 && !size) {
       toast.error("Escolha um tamanho para continuar.");
       return;
     }
-    if (variant.stock < 1) {
-      toast.error("Esse tamanho está esgotado.");
+    if (!variant) {
+      toast.error("Esta combinação não está disponível.");
       return;
     }
     addItem({

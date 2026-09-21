@@ -62,6 +62,8 @@ export const listProducts = createServerFn({ method: "GET" })
     let query = supabase
       .from("products")
       .select(PRODUCT_SELECT)
+      .order("color", { referencedTable: "product_variants", ascending: true })
+      .order("size", { referencedTable: "product_variants", ascending: true })
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
@@ -92,6 +94,8 @@ export const getProductBySlug = createServerFn({ method: "GET" })
     const { data: product, error } = await supabase
       .from("products")
       .select(PRODUCT_SELECT)
+      .order("color", { referencedTable: "product_variants", ascending: true })
+      .order("size", { referencedTable: "product_variants", ascending: true })
       .eq("slug", data.slug)
       .eq("is_active", true)
       .maybeSingle();

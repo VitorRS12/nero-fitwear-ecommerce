@@ -69,11 +69,14 @@ export function Header({ categories }: HeaderProps) {
         </nav>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" asChild aria-label="Buscar produtos">
+
+          {/* Formato será aplicado brevemente...*/}
+          
+          {/*<Button variant="ghost" size="icon" asChild aria-label="Buscar produtos">
             <Link to="/catalogo" search={{ busca: "" }}>
               <Search className="size-5" />
             </Link>
-          </Button>
+          </Button>*/}
           <Button variant="ghost" size="icon" asChild aria-label="Minha conta">
             <Link to="/conta">
               <User className="size-5" />
