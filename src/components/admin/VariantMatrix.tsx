@@ -30,6 +30,13 @@ export function VariantMatrix({ baseSlug, variants, onChange }: VariantMatrixPro
   const [colorHex, setColorHex] = useState("#111111");
   const [sizeName, setSizeName] = useState("");
 
+  {variants.some((variant) => variant.stock === 0) ? (
+    <p className="text-sm text-muted-foreground">
+      Existem combinações com estoque zero. Esses tamanhos ficarão bloqueados na loja. 
+    </p>
+  ): null}
+
+
   const colors = Array.from(
     new Map(
       variants
