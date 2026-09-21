@@ -70,7 +70,11 @@ export function ProductForm({ product, categories, collections }: ProductFormPro
       toast.error("Informe o preço da peça.");
       return;
     }
-
+    if (salePrice && Number(salePrice) >= Number(basePrice)) {
+      toast.error("O preço promocional deve ser menor que o normal.");
+      return;
+    }
+    
     setSaving(true);
     try {
       const result = await saveProduct({
@@ -123,11 +127,7 @@ export function ProductForm({ product, categories, collections }: ProductFormPro
         </div>
         <div className="space-y-2">
           <Label htmlFor="slug">Endereço da página</Label>
-          <Input
-            id="slug"
-            value={slug}
-            onChange={(event) => setSlug(slugify(event.target.value))}
-          />
+          <Input id="slug" value={slug} onChange={(event) => setSlug(slugify(event.target.value))} />
           <p className="text-xs text-muted-foreground">/produto/{slug || "..."}</p>
         </div>
 

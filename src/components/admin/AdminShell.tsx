@@ -34,15 +34,19 @@ export function AdminShell({ title, action, children }: AdminShellProps) {
           </Link>
           <span className="label-caps text-muted-foreground">Área restrita</span>
           <nav className="ml-auto flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="label-caps">
-              <Link to="/admin/produtos">Peças</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="label-caps">
-              <Link to="/admin/categorias">Categorias</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="label-caps">
-              <Link to="/admin/tela-inicial">Tela inicial</Link>
-            </Button>
+            {isAdmin ? (
+              <>
+                <Button asChild variant="ghost" size="sm" className="label-caps">
+                  <Link to="/admin/produtos">Peças</Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm" className="label-caps">
+                  <Link to="/admin/categorias">Categorias</Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm" className="label-caps">
+                  <Link to="/admin/tela-inicial">Tela inicial</Link>
+                </Button>
+              </>
+            ) : null}
             <Button variant="outline" size="sm" className="label-caps" onClick={signOut}>
               Sair
             </Button>
