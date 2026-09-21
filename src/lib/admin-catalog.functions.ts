@@ -59,7 +59,7 @@ export const adminListProducts = createServerFn({ method: "GET" })
 
 export const adminGetProduct = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -111,7 +111,7 @@ const categorySchema = z.object({
 
 export const adminSaveCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => categorySchema.parse(input))
+  .validator((input: unknown) => categorySchema.parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -159,7 +159,7 @@ const productSchema = z.object({
 
 export const adminSaveProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => productSchema.parse(input))
+  .validator((input: unknown) => productSchema.parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -238,7 +238,7 @@ export const adminSaveProduct = createServerFn({ method: "POST" })
 
 export const adminSetProductActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ id: z.string().uuid(), isActive: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -254,7 +254,7 @@ export const adminSetProductActive = createServerFn({ method: "POST" })
 
 export const adminDeleteProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -278,7 +278,7 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
 
 export const adminAddImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         productId: z.string().uuid(),
@@ -324,7 +324,7 @@ export const adminAddImages = createServerFn({ method: "POST" })
 
 export const adminUpdateImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -350,7 +350,7 @@ export const adminUpdateImage = createServerFn({ method: "POST" })
 
 export const adminDeleteImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -371,7 +371,7 @@ export const adminDeleteImage = createServerFn({ method: "POST" })
 
 export const adminReorderImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ productId: z.string().uuid(), ids: z.array(z.string().uuid()).min(1) })
       .parse(input),
@@ -409,7 +409,7 @@ export const adminListHomeMedia = createServerFn({ method: "GET" })
 
 export const adminSetHomeMedia = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         slot: homeSlotSchema,
@@ -449,7 +449,7 @@ export const adminSetHomeMedia = createServerFn({ method: "POST" })
 
 export const adminToggleHomeMedia = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ slot: homeSlotSchema, isActive: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -465,7 +465,7 @@ export const adminToggleHomeMedia = createServerFn({ method: "POST" })
 
 export const adminDeleteHomeMedia = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ slot: homeSlotSchema }).parse(input))
+  .validator((input: unknown) => z.object({ slot: homeSlotSchema }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);

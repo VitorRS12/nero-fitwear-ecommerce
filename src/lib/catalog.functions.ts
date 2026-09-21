@@ -4,7 +4,6 @@ import { z } from "zod";
 
 import type { Database } from "@/integrations/supabase/types";
 
-
 /**
  * Camada de leitura pública do catálogo.
  * Roda no servidor (SSR + SEO) com a chave publicável e respeita as
@@ -29,7 +28,7 @@ function createPublicClient() {
   });
 }
 
-const ADMIN_PRODUCT_SELECT = `
+const PRODUCT_SELECT = `
   id, name, slug, short_description, description, base_price, sale_price,
   is_featured, is_new, category_id, created_at,
   product_images ( id, url, alt, color, position ),
@@ -57,14 +56,12 @@ const listProductsSchema = z.object({
 });
 
 export const listProducts = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => listProductsSchema.parse(input ?? {}))
+  .validator((input: unknown) => listProductsSchema.parse(input ?? {}))
   .handler(async ({ data }) => {
     const supabase = createPublicClient();
     let query = supabase
       .from("products")
       .select(PRODUCT_SELECT)
-      .order("color", { referencedTable: "product_variants", ascending: true })
-      .order("size", { referencedTable: "product_variants", ascending: true })
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
@@ -89,14 +86,12 @@ export const listProducts = createServerFn({ method: "GET" })
   });
 
 export const getProductBySlug = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => z.object({ slug: z.string().min(1) }).parse(input))
+  .validator((input: unknown) => z.object({ slug: z.string().min(1) }).parse(input))
   .handler(async ({ data }) => {
     const supabase = createPublicClient();
     const { data: product, error } = await supabase
       .from("products")
       .select(PRODUCT_SELECT)
-      .order("color", { referencedTable: "product_variants", ascending: true })
-      .order("size", { referencedTable: "product_variants", ascending: true })
       .eq("slug", data.slug)
       .eq("is_active", true)
       .maybeSingle();

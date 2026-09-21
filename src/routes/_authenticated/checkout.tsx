@@ -14,7 +14,7 @@ import { formatCurrency } from "@/lib/format";
 import { useCart } from "@/providers/cart-provider";
 import { availableShipping, checkoutTotal, type paymentMethod } from "@/services/checkout.service";
 
-export const Route = createFileRoute("/checkout")({
+export const Route = createFileRoute("/_authenticated/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout — NERO Fitwear" },
