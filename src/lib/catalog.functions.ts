@@ -56,7 +56,7 @@ const listProductsSchema = z.object({
 });
 
 export const listProducts = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => listProductsSchema.parse(input ?? {}))
+  .validator((input: unknown) => listProductsSchema.parse(input ?? {}))
   .handler(async ({ data }) => {
     const supabase = createPublicClient();
     let query = supabase
@@ -86,7 +86,7 @@ export const listProducts = createServerFn({ method: "GET" })
   });
 
 export const getProductBySlug = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => z.object({ slug: z.string().min(1) }).parse(input))
+  .validator((input: unknown) => z.object({ slug: z.string().min(1) }).parse(input))
   .handler(async ({ data }) => {
     const supabase = createPublicClient();
     const { data: product, error } = await supabase

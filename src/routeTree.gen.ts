@@ -13,11 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
-import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as EntregaRouteImport } from './routes/entrega'
 import { Route as TrocasRouteImport } from './routes/trocas'
+import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as CatalogoIndexRouteImport } from './routes/catalogo.index'
 import { Route as CatalogoCategoriaRouteImport } from './routes/catalogo.$categoria'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
@@ -48,11 +48,6 @@ const CarrinhoRoute = CarrinhoRouteImport.update({
   path: '/carrinho',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ContaRoute = ContaRouteImport.update({
   id: '/conta',
   path: '/conta',
@@ -72,6 +67,11 @@ const TrocasRoute = TrocasRouteImport.update({
   id: '/trocas',
   path: '/trocas',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedCheckoutRoute = AuthenticatedCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const CatalogoIndexRoute = CatalogoIndexRouteImport.update({
   id: '/catalogo/',
@@ -133,11 +133,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/carrinho': typeof CarrinhoRoute
-  '/checkout': typeof CheckoutRoute
   '/conta': typeof ContaRoute
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
   '/trocas': typeof TrocasRoute
+  '/checkout': typeof AuthenticatedCheckoutRoute
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/catalogo/': typeof CatalogoIndexRoute
@@ -153,11 +153,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/carrinho': typeof CarrinhoRoute
-  '/checkout': typeof CheckoutRoute
   '/conta': typeof ContaRoute
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
   '/trocas': typeof TrocasRoute
+  '/checkout': typeof AuthenticatedCheckoutRoute
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/catalogo': typeof CatalogoIndexRoute
@@ -175,11 +175,11 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/carrinho': typeof CarrinhoRoute
-  '/checkout': typeof CheckoutRoute
   '/conta': typeof ContaRoute
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
   '/trocas': typeof TrocasRoute
+  '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/catalogo/': typeof CatalogoIndexRoute
@@ -197,11 +197,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/carrinho'
-    | '/checkout'
     | '/conta'
     | '/contato'
     | '/entrega'
     | '/trocas'
+    | '/checkout'
     | '/catalogo/$categoria'
     | '/produto/$slug'
     | '/catalogo/'
@@ -217,11 +217,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/carrinho'
-    | '/checkout'
     | '/conta'
     | '/contato'
     | '/entrega'
     | '/trocas'
+    | '/checkout'
     | '/catalogo/$categoria'
     | '/produto/$slug'
     | '/catalogo'
@@ -238,11 +238,11 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/carrinho'
-    | '/checkout'
     | '/conta'
     | '/contato'
     | '/entrega'
     | '/trocas'
+    | '/_authenticated/checkout'
     | '/catalogo/$categoria'
     | '/produto/$slug'
     | '/catalogo/'
@@ -260,7 +260,6 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CarrinhoRoute: typeof CarrinhoRoute
-  CheckoutRoute: typeof CheckoutRoute
   ContaRoute: typeof ContaRoute
   ContatoRoute: typeof ContatoRoute
   EntregaRoute: typeof EntregaRoute
@@ -301,13 +300,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CarrinhoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/conta': {
       id: '/conta'
       path: '/conta'
@@ -335,6 +327,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/trocas'
       preLoaderRoute: typeof TrocasRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/checkout': {
+      id: '/_authenticated/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof AuthenticatedCheckoutRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/catalogo/': {
       id: '/catalogo/'
@@ -410,6 +409,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRoute
   AuthenticatedAdminCategoriasRoute: typeof AuthenticatedAdminCategoriasRoute
   AuthenticatedAdminTelaInicialRoute: typeof AuthenticatedAdminTelaInicialRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -419,6 +419,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCheckoutRoute: AuthenticatedCheckoutRoute,
   AuthenticatedAdminCategoriasRoute: AuthenticatedAdminCategoriasRoute,
   AuthenticatedAdminTelaInicialRoute: AuthenticatedAdminTelaInicialRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
@@ -435,7 +436,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CarrinhoRoute: CarrinhoRoute,
-  CheckoutRoute: CheckoutRoute,
   ContaRoute: ContaRoute,
   ContatoRoute: ContatoRoute,
   EntregaRoute: EntregaRoute,

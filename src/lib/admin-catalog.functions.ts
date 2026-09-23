@@ -4,13 +4,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
-import {
-  PRODUCT_IMAGE_BUCKET,
-  slugify,
-  storagePathToUrl,
-  urlToStoragePath,
-} from "@/lib/product-images";
-import { Description } from "@radix-ui/react-alert-dialog";
+import { PRODUCT_IMAGE_BUCKET, storagePathToUrl, urlToStoragePath } from "@/lib/product-images";
 
 /**
  * Camada de escrita do catálogo (área restrita).
@@ -22,6 +16,7 @@ type AuthedContext = {
   supabase: SupabaseClient<Database>;
   userId: string;
 };
+
 
 async function assertAdmin(context: AuthedContext) {
   const { data, error } = await context.supabase.rpc("has_role", {
@@ -64,7 +59,7 @@ export const adminListProducts = createServerFn({ method: "GET" })
 
 export const adminGetProduct = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -89,6 +84,63 @@ export const adminTaxonomy = createServerFn({ method: "GET" })
     if (categories.error) throw new Error(categories.error.message);
     if (collections.error) throw new Error(collections.error.message);
     return { categories: categories.data ?? [], collections: collections.data ?? [] };
+  });
+
+export const adminListCategories = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as AuthedContext;
+    await assertAdmin(ctx);
+    const { data, error } = await ctx.supabase
+      .from("categories")
+      .select("id, name, slug, description, image_url, position, is_active, created_at, updated_at")
+      .order("position", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+const categorySchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(2).max(100),
+  slug: z.string().trim().min(2).max(120),
+  description: z.string().trim().max(500).nullable(),
+  image_url: z.string().trim().nullable(),
+  position: z.number().int().min(0),
+  is_active: z.boolean(),
+});
+
+export const adminSaveCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) => categorySchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const ctx = context as AuthedContext;
+    await assertAdmin(ctx);
+    const previous = data.id
+      ? await ctx.supabase.from("categories").select("image_url").eq("id", data.id).maybeSingle()
+      : null;
+    if (previous?.error) throw new Error(previous.error.message);
+
+    const payload = {
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      image_url: data.image_url,
+      position: data.position,
+      is_active: data.is_active,
+    };
+    const query = data.id
+      ? ctx.supabase.from("categories").update(payload).eq("id", data.id)
+      : ctx.supabase.from("categories").insert(payload);
+    const { error } = await query;
+    if (error?.code === "23505") throw new Error("Já existe uma categoria com esse endereço.");
+    if (error) throw new Error(error.message);
+    const previousPath = previous?.data?.image_url ? urlToStoragePath(previous.data.image_url) : null;
+    const nextPath = data.image_url ? urlToStoragePath(data.image_url) : null;
+    if (previousPath && previousPath !== nextPath) {
+      await ctx.supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([previousPath]);
+    }
+    return { ok: true };
   });
 
 const variantSchema = z.object({
@@ -119,7 +171,7 @@ const productSchema = z.object({
 
 export const adminSaveProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => productSchema.parse(input))
+  .validator((input: unknown) => productSchema.parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -153,11 +205,27 @@ export const adminSaveProduct = createServerFn({ method: "POST" })
       productId = created.id;
     }
 
+    const normalizedSkus = data.variants.map((variant) => variant.sku.trim().toUpperCase());
+    if (new Set(normalizedSkus).size !== normalizedSkus.length) {
+      throw new Error("Existem códigos de variação repetidos nesta peça.");
+    }
+
+    const { data: existingVariants, error: existingError } = await ctx.supabase
+      .from("product_variants")
+      .select("id, sku")
+      .eq("product_id", productId);
+    if (existingError) throw new Error(existingError.message);
+    const existingBySku = new Map(
+      (existingVariants ?? []).map((variant) => [variant.sku.trim().toUpperCase(), variant.id]),
+    );
+
     const keptIds: string[] = [];
     for (const variant of data.variants) {
+      const normalizedSku = variant.sku.trim().toUpperCase();
+      const reconciledId = variant.id ?? existingBySku.get(normalizedSku);
       const row = {
         product_id: productId,
-        sku: variant.sku,
+        sku: normalizedSku,
         color: variant.color,
         color_hex: variant.color_hex,
         size: variant.size,
@@ -165,19 +233,22 @@ export const adminSaveProduct = createServerFn({ method: "POST" })
         stock: variant.stock,
         is_active: true,
       };
-      if (variant.id) {
+      if (reconciledId) {
         const { error } = await ctx.supabase
           .from("product_variants")
           .update(row)
-          .eq("id", variant.id);
+          .eq("id", reconciledId)
+          .eq("product_id", productId);
+        if (error?.code === "23505") throw new Error(`O código ${normalizedSku} já pertence a outra variação.`);
         if (error) throw new Error(error.message);
-        keptIds.push(variant.id);
+        keptIds.push(reconciledId);
       } else {
         const { data: created, error } = await ctx.supabase
           .from("product_variants")
           .insert(row)
           .select("id")
           .single();
+        if (error?.code === "23505") throw new Error(`O código ${normalizedSku} já pertence a outra variação.`);
         if (error) throw new Error(error.message);
         keptIds.push(created.id);
       }
@@ -198,7 +269,7 @@ export const adminSaveProduct = createServerFn({ method: "POST" })
 
 export const adminSetProductActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ id: z.string().uuid(), isActive: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -214,7 +285,7 @@ export const adminSetProductActive = createServerFn({ method: "POST" })
 
 export const adminDeleteProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -238,7 +309,7 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
 
 export const adminAddImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         productId: z.string().uuid(),
@@ -284,7 +355,7 @@ export const adminAddImages = createServerFn({ method: "POST" })
 
 export const adminUpdateImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -302,6 +373,7 @@ export const adminUpdateImage = createServerFn({ method: "POST" })
     if (data.color !== undefined) patch.color = data.color;
     if (Object.keys(patch).length === 0) return { ok: true };
 
+
     const { error } = await ctx.supabase.from("product_images").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -309,7 +381,7 @@ export const adminUpdateImage = createServerFn({ method: "POST" })
 
 export const adminDeleteImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -330,8 +402,10 @@ export const adminDeleteImage = createServerFn({ method: "POST" })
 
 export const adminReorderImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ productId: z.string().uuid(), ids: z.array(z.string().uuid()).min(1) }).parse(input),
+  .validator((input: unknown) =>
+    z
+      .object({ productId: z.string().uuid(), ids: z.array(z.string().uuid()).min(1) })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
@@ -366,7 +440,7 @@ export const adminListHomeMedia = createServerFn({ method: "GET" })
 
 export const adminSetHomeMedia = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         slot: homeSlotSchema,
@@ -406,7 +480,7 @@ export const adminSetHomeMedia = createServerFn({ method: "POST" })
 
 export const adminToggleHomeMedia = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ slot: homeSlotSchema, isActive: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -422,7 +496,7 @@ export const adminToggleHomeMedia = createServerFn({ method: "POST" })
 
 export const adminDeleteHomeMedia = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ slot: homeSlotSchema }).parse(input))
+  .validator((input: unknown) => z.object({ slot: homeSlotSchema }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
@@ -436,98 +510,6 @@ export const adminDeleteHomeMedia = createServerFn({ method: "POST" })
     if (path) await ctx.supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([path]);
 
     const { error } = await ctx.supabase.from("home_media").delete().eq("slot", data.slot);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-/* ------------ Categorias ------------*/
-
-export const adminListCategories = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const ctx = context as AuthedContext;
-    await assertAdmin(ctx);
-    const { data, error } = await ctx.supabase
-      .from("categories")
-      .select("id, name, slug, description, image_url, position, is_active")
-      .order("position", { ascending: true });
-    if (error) throw new Error(error.message);
-    return data ?? [];
-  });
-
-const categoryUpdateSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(2).optional(),
-  slug: z.string().min(2).optional(),
-  description: z.string().nullable().optional(),
-});
-
-export const adminUpdateCategory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => categoryUpdateSchema.parse(input))
-  .handler(async ({ data, context }) => {
-    const ctx = context as AuthedContext;
-    await assertAdmin(ctx);
-
-    const patch: { name?: string; slug?: string; description?: string | null } = {};
-    if (data.name !== undefined) patch.name = data.name;
-    if (data.slug !== undefined) patch.slug = data.slug;
-    if (data.description !== undefined) patch.description = data.description;
-    if (Object.keys(patch).length === 0) return { ok: true };
-
-    const { error } = await ctx.supabase.from("categories").update(patch).eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-export const adminSetCategoryImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ id: z.string().uuid(), path: z.string().min(1) }).parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const ctx = context as AuthedContext;
-    await assertAdmin(ctx);
-
-    const { data: current } = await ctx.supabase
-      .from("categories")
-      .select("image_url")
-      .eq("id", data.id)
-      .maybeSingle();
-    const previousPath = current?.image_url ? urlToStoragePath(current.image_url) : null;
-
-    const { error } = await ctx.supabase
-      .from("categories")
-      .update({ image_url: storagePathToUrl(data.path) })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-
-    // A imagem anterior da categoria sai do armazenamento.
-    if (previousPath && previousPath !== data.path) {
-      await ctx.supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([previousPath]);
-    }
-    return { ok: true };
-  });
-
-export const adminRemoveCategoryImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ data, context }) => {
-    const ctx = context as AuthedContext;
-    await assertAdmin(ctx);
-
-    const { data: current } = await ctx.supabase
-      .from("categories")
-      .select("image_url")
-      .eq("id", data.id)
-      .maybeSingle();
-    const path = current?.image_url ? urlToStoragePath(current.image_url) : null;
-    if (path) await ctx.supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([path]);
-
-    const { error } = await ctx.supabase
-      .from("categories")
-      .update({ image_url: null })
-      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

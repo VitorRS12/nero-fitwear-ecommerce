@@ -60,7 +60,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         entry.variantId === item.variantId
           ? {
               ...entry,
-              quantity: Math.min(entry.quantity + item.quantity, entry.maxStock),
+              unitPrice: item.unitPrice,
+              maxStock: item.maxStock,
+              quantity: Math.min(
+                entry.quantity + item.quantity,
+                item.maxStock,
+              ),
             }
           : entry,
       );

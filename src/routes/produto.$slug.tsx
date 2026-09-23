@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -22,10 +22,7 @@ export const Route = createFileRoute("/produto/$slug")({
   head: ({ params }) => ({
     meta: [
       { title: `${params.slug.replace(/-/g, " ")} — NERO Fitwear` },
-      {
-        name: "description",
-        content: "Peça técnica NERO Fitwear com compressão e caimento premium.",
-      },
+      { name: "description", content: "Peça técnica NERO Fitwear com compressão e caimento premium." },
       { property: "og:title", content: `${params.slug.replace(/-/g, " ")} — NERO Fitwear` },
       { property: "og:description", content: "Peça técnica NERO Fitwear." },
       { property: "og:type", content: "product" },
@@ -43,9 +40,9 @@ function ProductNotFound() {
       <Section title="Produto não encontrado">
         <p className="text-sm text-muted-foreground">
           Essa peça saiu do ar.{" "}
-          <a href="/catalogo" className="text-accent underline">
+          <Link to="/catalogo" className="text-accent underline">
             Ver o catálogo
-          </a>
+          </Link>
         </p>
       </Section>
     </StoreLayout>
@@ -54,13 +51,13 @@ function ProductNotFound() {
 
 function ProductPage() {
   const { slug } = Route.useParams();
-  const { data: product } = useQuery(productQuery(slug));
+  const { data: product } = useSuspenseQuery(productQuery(slug));
   const { addItem } = useCart();
 
   const [color, setColor] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
 
-  const variants = useMemo(() => product?.product_variants ?? [], [product]);
+  const variants = product?.product_variants ?? [];
   const colors = useMemo(
     () =>
       Array.from(
@@ -120,6 +117,7 @@ function ProductPage() {
           <ProductGallery images={images} alt={product.name} />
         </div>
 
+
         <div className="space-y-8">
           <div className="space-y-3">
             <h1 className="text-5xl sm:text-6xl">{product.name}</h1>
@@ -159,8 +157,8 @@ function ProductPage() {
                       setSize(null);
                     }}
                     className={cn(
-                      "size-9 rounded-full border-2 transition-colors",
-                      selectedColor === name ? "border-accent" : "border-border",
+                        "size-9 rounded-full border-2 transition-[border-color,transform] duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none",
+                        selectedColor === name ? "scale-110 border-accent" : "border-border",
                     )}
                     style={{ backgroundColor: hex }}
                   />
@@ -181,9 +179,10 @@ function ProductPage() {
                       type="button"
                       disabled={stock < 1}
                       aria-pressed={size === value}
+                      aria-label={`Tamanho ${value}${stock < 1 ? ", esgotado" : ""}`}
                       onClick={() => setSize(value)}
                       className={cn(
-                        "min-w-14 border px-4 py-2.5 text-sm font-semibold transition-colors",
+                        "min-w-14 border px-4 py-2.5 text-sm font-semibold transition-[color,background-color,border-color,transform] duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none",
                         size === value
                           ? "border-accent bg-accent text-accent-foreground"
                           : "border-border hover:border-foreground",
