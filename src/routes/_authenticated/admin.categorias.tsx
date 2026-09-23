@@ -25,6 +25,7 @@ function AdminCategoriesPage() {
   const categories = useQuery(adminCategoriesQuery());
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
+    await queryClient.invalidateQueries({ queryKey: [ "admin", "taxonomy"] })
     await queryClient.invalidateQueries({ queryKey: ["categories"] });
   };
 

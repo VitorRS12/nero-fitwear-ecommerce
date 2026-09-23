@@ -105,6 +105,7 @@ const categorySchema = z.object({
   name: z.string().trim().min(2).max(100),
   slug: z.string().trim().min(2).max(120),
   description: z.string().trim().max(500).nullable(),
+  image_url: z.string().trim().nullable(),
   position: z.number().int().min(0),
   is_active: z.boolean(),
 });
@@ -115,10 +116,16 @@ export const adminSaveCategory = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
+    const previous = data.id
+      ? await ctx.supabase.from("categories").select("image_url").eq("id", data.id).maybeSingle()
+      : null;
+    if (previous?.error) throw new Error(previous.error.message);
+
     const payload = {
       name: data.name,
       slug: data.slug,
       description: data.description,
+      image_url: data.image_url,
       position: data.position,
       is_active: data.is_active,
     };
@@ -128,6 +135,11 @@ export const adminSaveCategory = createServerFn({ method: "POST" })
     const { error } = await query;
     if (error?.code === "23505") throw new Error("Já existe uma categoria com esse endereço.");
     if (error) throw new Error(error.message);
+    const previousPath = previous?.data?.image_url ? urlToStoragePath(previous.data.image_url) : null;
+    const nextPath = data.image_url ? urlToStoragePath(data.image_url) : null;
+    if (previousPath && previousPath !== nextPath) {
+      await ctx.supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([previousPath]);
+    }
     return { ok: true };
   });
 
@@ -193,11 +205,27 @@ export const adminSaveProduct = createServerFn({ method: "POST" })
       productId = created.id;
     }
 
+    const normalizedSkus = data.variants.map((variant) => variant.sku.trim().toUpperCase());
+    if (new Set(normalizedSkus).size !== normalizedSkus.length) {
+      throw new Error("Existem códigos de variação repetidos nesta peça.");
+    }
+
+    const { data: existingVariants, error: existingError } = await ctx.supabase
+      .from("product_variants")
+      .select("id, sku")
+      .eq("product_id", productId);
+    if (existingError) throw new Error(existingError.message);
+    const existingBySku = new Map(
+      (existingVariants ?? []).map((variant) => [variant.sku.trim().toUpperCase(), variant.id]),
+    );
+
     const keptIds: string[] = [];
     for (const variant of data.variants) {
+      const normalizedSku = variant.sku.trim().toUpperCase();
+      const reconciledId = variant.id ?? existingBySku.get(normalizedSku);
       const row = {
         product_id: productId,
-        sku: variant.sku,
+        sku: normalizedSku,
         color: variant.color,
         color_hex: variant.color_hex,
         size: variant.size,
@@ -205,19 +233,22 @@ export const adminSaveProduct = createServerFn({ method: "POST" })
         stock: variant.stock,
         is_active: true,
       };
-      if (variant.id) {
+      if (reconciledId) {
         const { error } = await ctx.supabase
           .from("product_variants")
           .update(row)
-          .eq("id", variant.id);
+          .eq("id", reconciledId)
+          .eq("product_id", productId);
+        if (error?.code === "23505") throw new Error(`O código ${normalizedSku} já pertence a outra variação.`);
         if (error) throw new Error(error.message);
-        keptIds.push(variant.id);
+        keptIds.push(reconciledId);
       } else {
         const { data: created, error } = await ctx.supabase
           .from("product_variants")
           .insert(row)
           .select("id")
           .single();
+        if (error?.code === "23505") throw new Error(`O código ${normalizedSku} já pertence a outra variação.`);
         if (error) throw new Error(error.message);
         keptIds.push(created.id);
       }

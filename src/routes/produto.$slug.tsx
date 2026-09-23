@@ -188,7 +188,7 @@ function ProductPage() {
                       setSize(null);
                     }}
                     className={cn(
-                      "size-9 rounded-full border-2 transition-colors",
+                      "size-9 rounded-full border-2 transition-[border-color,transform] duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none",
                       selectedColor === name ? "border-accent" : "border-border",
                     )}
                     style={{ backgroundColor: hex }}
@@ -217,7 +217,7 @@ function ProductPage() {
                       title={ stock < 1 ? "Tamanho esgotado" : undefined}
                       onClick={() => setSize(value)}
                       className={cn(
-                        "min-w-14 border px-4 py-2.5 text-sm font-semibold transition-colors",
+                        "min-w-14 border px-4 py-2.5 text-sm font-semibold transition-[color,background-color,border-color,transform] duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none",
                         size === value
                           ? "border-accent bg-accent text-accent-foreground"
                           : "border-border hover:border-foreground",

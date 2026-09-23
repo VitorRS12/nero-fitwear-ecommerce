@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { CategoryCard } from "@/components/blocks/CategoryCard";
@@ -44,10 +44,10 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const { data: categories = [] } = useQuery(categoriesQuery());
-  const featured = useQuery(productsQuery({ featured: true, limit: 8 }));
+  const { data: categories } = useSuspenseQuery(categoriesQuery());
+  const featured = useSuspenseQuery(productsQuery({ featured: true, limit: 8 }));
   const novelties = useQuery(productsQuery({ isNew: true, limit: 4 }));
-  const { data: homeMedia } = useQuery(homeMediaQuery());
+  const { data: homeMedia } = useSuspenseQuery(homeMediaQuery());
 
   return (
     <StoreLayout>
@@ -80,7 +80,7 @@ function HomePage() {
           </Button>
         }
       >
-        <ProductGrid products={featured.data ?? []} isLoading={featured.isLoading} />
+        <ProductGrid products={featured.data} />
       </Section>
 
       <PromotionalBanner
