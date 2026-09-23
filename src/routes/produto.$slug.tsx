@@ -204,11 +204,13 @@ function ProductPage() {
               <div className="flex flex-wrap gap-2">
                 {sizes.map((value) => {
                   const stock = stockForSize(value);
+                  const isSelected = size === value;
                   return (
                     <button
+                      key={value}
                       type="button"
                       disabled={stock < 1}
-                      aria-pressed={size === value}
+                      aria-pressed={isSelected}
                       aria-label={
                         stock < 1 
                           ? `Tamanho ${value}, esgotado`
