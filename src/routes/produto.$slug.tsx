@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -22,10 +22,7 @@ export const Route = createFileRoute("/produto/$slug")({
   head: ({ params }) => ({
     meta: [
       { title: `${params.slug.replace(/-/g, " ")} — NERO Fitwear` },
-      {
-        name: "description",
-        content: "Peça técnica NERO Fitwear com compressão e caimento premium.",
-      },
+      { name: "description", content: "Peça técnica NERO Fitwear com compressão e caimento premium." },
       { property: "og:title", content: `${params.slug.replace(/-/g, " ")} — NERO Fitwear` },
       { property: "og:description", content: "Peça técnica NERO Fitwear." },
       { property: "og:type", content: "product" },
@@ -43,9 +40,9 @@ function ProductNotFound() {
       <Section title="Produto não encontrado">
         <p className="text-sm text-muted-foreground">
           Essa peça saiu do ar.{" "}
-          <a href="/catalogo" className="text-accent underline">
+          <Link to="/catalogo" className="text-accent underline">
             Ver o catálogo
-          </a>
+          </Link>
         </p>
       </Section>
     </StoreLayout>
@@ -54,60 +51,31 @@ function ProductNotFound() {
 
 function ProductPage() {
   const { slug } = Route.useParams();
-  const { data: product } = useQuery(productQuery(slug));
+  const { data: product } = useSuspenseQuery(productQuery(slug));
   const { addItem } = useCart();
 
   const [color, setColor] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
 
-  const variants = useMemo(() => product?.product_variants ?? [], [product]);
+  const variants = product?.product_variants ?? [];
   const colors = useMemo(
     () =>
       Array.from(
         new Map(
-          variants
-          .filter((v) => v.color)
-          .map((v) => [
-            v.color as string, 
-            v.color_hex ?? "#8A8A8A"] as const),
+          variants.filter((v) => v.color).map((v) => [v.color as string, v.color_hex ?? "#8A8A8A"]),
         ),
       ),
     [variants],
   );
-
-  const deafaultColor = useMemo(
-    () => 
-      colors.find(([name]) =>
-        variants.some(
-          (variant) => variant.color === name && variant.stock > 0,
-        ),
-    )?.[0] ?? colors[0]?.[0] ?? null,
-  [colors, variants]
-);
-
-  const selectedColor = color ?? deafaultColor;
-
   const sizes = useMemo(
-    () => 
-      Array.from(
-        new Set(
-          variants
-            .filter(
-              (variant) => variant.size && (selectedColor === null || variant.color === selectedColor),
-            )
-            .map((variant) => variant.size as string),
-          ),
-      ),
-    [variants, selectedColor],
+    () => Array.from(new Set(variants.filter((v) => v.size).map((v) => v.size as string))),
+    [variants],
   );
 
   if (!product) return <ProductNotFound />;
 
-  const variant = variants.find((item) => {
-    const colorMatches = colors.length === 0 || item.color === selectedColor;
-    const sizeMatches = sizes.length === 0 || item.size === size;
-    return colorMatches && sizeMatches;
-  }) ?? null; 
+  const selectedColor = color ?? colors[0]?.[0] ?? null;
+  const variant = variants.find((v) => v.color === selectedColor && v.size === size) ?? null;
   const allImages = [...(product.product_images ?? [])].sort((a, b) => a.position - b.position);
   const colorImages = allImages.filter((image) => image.color === selectedColor);
   const images = colorImages.length > 0 ? colorImages : allImages;
@@ -118,12 +86,12 @@ function ProductPage() {
     variants.find((v) => v.color === selectedColor && v.size === value)?.stock ?? 0;
 
   const handleAdd = () => {
-    if (sizes.length > 0 && !size) {
+    if (!size || !variant) {
       toast.error("Escolha um tamanho para continuar.");
       return;
     }
-    if (!variant) {
-      toast.error("Esta combinação não está disponível.");
+    if (variant.stock < 1) {
+      toast.error("Esse tamanho está esgotado.");
       return;
     }
     addItem({
@@ -148,6 +116,7 @@ function ProductPage() {
         <div className="lg:sticky lg:top-24 lg:self-start">
           <ProductGallery images={images} alt={product.name} />
         </div>
+
 
         <div className="space-y-8">
           <div className="space-y-3">
@@ -188,8 +157,8 @@ function ProductPage() {
                       setSize(null);
                     }}
                     className={cn(
-                      "size-9 rounded-full border-2 transition-[border-color,transform] duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none",
-                      selectedColor === name ? "border-accent" : "border-border",
+                        "size-9 rounded-full border-2 transition-[border-color,transform] duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none",
+                        selectedColor === name ? "scale-110 border-accent" : "border-border",
                     )}
                     style={{ backgroundColor: hex }}
                   />
@@ -204,19 +173,13 @@ function ProductPage() {
               <div className="flex flex-wrap gap-2">
                 {sizes.map((value) => {
                   const stock = stockForSize(value);
-                  const isSelected = size === value;
                   return (
                     <button
                       key={value}
                       type="button"
                       disabled={stock < 1}
-                      aria-pressed={isSelected}
-                      aria-label={
-                        stock < 1 
-                          ? `Tamanho ${value}, esgotado`
-                          : `Selecionar tamanho ${value}`
-                      }
-                      title={ stock < 1 ? "Tamanho esgotado" : undefined}
+                      aria-pressed={size === value}
+                      aria-label={`Tamanho ${value}${stock < 1 ? ", esgotado" : ""}`}
                       onClick={() => setSize(value)}
                       className={cn(
                         "min-w-14 border px-4 py-2.5 text-sm font-semibold transition-[color,background-color,border-color,transform] duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none",

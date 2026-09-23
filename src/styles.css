@@ -1,5 +1,8 @@
 @import "tailwindcss/index.css";
+@source "../src/"
 @import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 /*
  * NERO Fitwear — Design System

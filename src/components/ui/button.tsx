@@ -5,15 +5,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-[color,background-color,border-color,transform] duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transform-none",  
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-[color,background-color,border-color,transform] duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 motion-reduce:transform-none",
   {
     variants: {
       variant: {
-        default: "border border-primary bg-primary text-primary-foreground hover:bg-background hover:text-foreground",
-        destructive: "border border-destructive bg-destructive text-destructive-foreground hover:bg-background hover:text-destructive",
+        default: "border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background",
+        destructive:
+          "border border-destructive bg-destructive text-destructive-foreground hover:bg-background hover:text-destructive",
         outline:
-          "border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background", 
-        secondary: "border border-secondary bg-secondary text-secondary-foreground hover:border-foreground hover:bg-background",
+          "border border-input bg-background text-foreground hover:border-accent hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "border border-secondary bg-secondary text-secondary-foreground hover:border-foreground hover:bg-background",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
@@ -39,9 +41,7 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
-    return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
-    );
+    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
   },
 );
 Button.displayName = "Button";
