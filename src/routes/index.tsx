@@ -52,8 +52,8 @@ function HomePage() {
   return (
     <StoreLayout>
       <Hero
-        title={"Treine\npesado"}
-        subtitle="Peças técnicas feitas para suportar o seu limite: compressão que sustenta, tecido que respira e modelagem que acompanha o movimento."
+        title={"Health\ncare"}
+        subtitle="Leves e estilosas pensando em você sempre."
         imageUrl={findSlot(homeMedia, "hero")?.url ?? null}
       />
 
