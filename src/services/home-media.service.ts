@@ -11,6 +11,8 @@ export interface HomeMedia {
   url: string;
   alt: string | null;
   is_active: boolean;
+  focal_x: number;
+  focal_y: number;
 }
 
 export const homeMediaQuery = () =>

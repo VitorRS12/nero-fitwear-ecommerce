@@ -26,6 +26,8 @@ export interface AdminImage {
   color: string | null;
   position: number;
   is_primary: boolean;
+  focal_x: number;
+  focal_y: number;
 }
 
 export interface AdminProduct {
@@ -58,6 +60,8 @@ export interface AdminCategory extends TaxonomyItem {
   description: string | null;
   image_url: string | null;
   position: number;
+  focal_x: number;
+  focal_y: number;
   created_at: string;
   updated_at: string;
 }

@@ -84,7 +84,10 @@ function AdminProductsPage() {
                       <td className="p-3">
                         <div className="flex items-center gap-3">
                           <div className="size-14 overflow-hidden bg-graphite">
-                            <ProductThumb url={cover?.url} alt={product.name} />
+                            <ProductThumb
+                              url={cover?.url}
+                              alt={product.name}
+                            />
                           </div>
                           <Link
                             to="/admin/produtos/$id"
@@ -95,9 +98,7 @@ function AdminProductsPage() {
                           </Link>
                         </div>
                       </td>
-                      <td className="p-3">
-                        {formatCurrency(product.sale_price ?? product.base_price)}
-                      </td>
+                      <td className="p-3">{formatCurrency(product.sale_price ?? product.base_price)}</td>
                       <td className="p-3">{stock}</td>
                       <td className="p-3">{product.product_images?.length ?? 0}</td>
                       <td className="p-3">

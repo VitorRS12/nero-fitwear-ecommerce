@@ -8,6 +8,8 @@ interface PromotionalBannerProps {
   description?: string | undefined;
   ctaLabel?: string | undefined;
   imageUrl?: string | null | undefined;
+  focalX?: number | undefined;
+  focalY?: number | undefined;
 }
 
 export function PromotionalBanner({
@@ -16,6 +18,8 @@ export function PromotionalBanner({
   description,
   ctaLabel = "Explorar coleção",
   imageUrl,
+  focalX = 50,
+  focalY = 50,
 }: PromotionalBannerProps) {
   return (
     <section className="relative overflow-hidden border-y border-border bg-graphite">
@@ -26,6 +30,7 @@ export function PromotionalBanner({
           aria-hidden="true"
           loading="lazy"
           className="absolute inset-0 h-full w-full object-cover opacity-35"
+          style={{ objectPosition: `${focalX}% ${focalY}%` }}
         />
       ) : null}
       <div className="container-nero relative flex min-h-[420px] items-center py-16">

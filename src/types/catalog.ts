@@ -7,6 +7,8 @@ export interface Category {
   description: string | null;
   image_url: string | null;
   position: number;
+  focal_x: number;
+  focal_y: number;
 }
 
 export interface ProductImage {
@@ -15,6 +17,8 @@ export interface ProductImage {
   alt: string | null;
   color: string | null;
   position: number;
+  focal_x: number;
+  focal_y: number;
 }
 
 export interface ProductVariant {

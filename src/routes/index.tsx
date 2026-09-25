@@ -47,15 +47,28 @@ function HomePage() {
   const { data: categories } = useSuspenseQuery(categoriesQuery());
   const featured = useSuspenseQuery(productsQuery({ featured: true, limit: 8 }));
   const novelties = useQuery(productsQuery({ isNew: true, limit: 4 }));
+  
   const { data: homeMedia } = useSuspenseQuery(homeMediaQuery());
+=======
+  
+  const { data: homeMedia } = useQuery(homeMediaQuery());
+=======
+  const { data: homeMedia } = useSuspenseQuery(homeMediaQuery());
+  const heroMedia = findSlot(homeMedia, "hero");
+  const bannerMedia = findSlot(homeMedia, "banner");
+ 
+ 
 
   return (
     <StoreLayout>
       <Hero
         title={"Treine\npesado"}
         subtitle="Peças técnicas feitas para suportar o seu limite: compressão que sustenta, tecido que respira e modelagem que acompanha o movimento."
-        imageUrl={findSlot(homeMedia, "hero")?.url ?? null}
+        imageUrl={heroMedia?.url ?? null}
+        focalX={heroMedia?.focal_x}
+        focalY={heroMedia?.focal_y}
       />
+
 
       <FeatureSection />
 
@@ -86,7 +99,9 @@ function HomePage() {
       <PromotionalBanner
         title={"Coleção\nConcrete"}
         description="Preto, grafite e areia. Peças atemporais que combinam entre si e aguentam o ano inteiro de treino."
-        imageUrl={findSlot(homeMedia, "banner")?.url ?? null}
+        imageUrl={bannerMedia?.url ?? null}
+        focalX={bannerMedia?.focal_x}
+        focalY={bannerMedia?.focal_y}
       />
 
       <Section

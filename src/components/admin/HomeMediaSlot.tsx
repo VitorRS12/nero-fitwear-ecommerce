@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ImagePositionEditor, type ImagePosition } from "@/components/ui/image-position-editor";
 import { supabase } from "@/integrations/supabase/client";
 import {
   adminDeleteHomeMedia,
@@ -31,6 +32,10 @@ export function HomeMediaSlot({ slot, title, hint, media }: HomeMediaSlotProps) 
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [focal, setFocal] = useState<ImagePosition>({
+    x: media?.focal_x ?? 50,
+    y: media?.focal_y ?? 50,
+  });
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["admin", "home-media"] });
@@ -47,7 +52,16 @@ export function HomeMediaSlot({ slot, title, hint, media }: HomeMediaSlotProps) 
         .from(PRODUCT_IMAGE_BUCKET)
         .upload(path, file, { cacheControl: "31536000", upsert: false });
       if (error) throw error;
-      await setMedia({ data: { slot, path, alt: media?.alt ?? null } });
+      await setMedia({
+        data: {
+          slot,
+          path,
+          alt: media?.alt ?? null,
+          focal_x: 50,
+          focal_y: 50,
+          is_active: true,
+        },
+      });
       toast.success("Imagem publicada na tela inicial.");
       await refresh();
     } catch (error) {
@@ -65,11 +79,17 @@ export function HomeMediaSlot({ slot, title, hint, media }: HomeMediaSlotProps) 
         <p className="text-sm text-muted-foreground">{hint}</p>
       </div>
 
-      <div className="relative aspect-[16/7] overflow-hidden border border-border bg-graphite">
+      <div className="relative">
         {media ? (
-          <img src={media.url} alt={media.alt ?? ""} className="h-full w-full object-cover" />
+          <ImagePositionEditor
+            src={media.url}
+            alt={media.alt ?? "Prévia da imagem"}
+            value={focal}
+            onChange={setFocal}
+            className="aspect-[16/7]"
+          />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          <div className="flex aspect-[16/7] items-center justify-center border border-border bg-graphite text-sm text-muted-foreground">
             Nenhuma imagem escolhida
           </div>
         )}
@@ -104,6 +124,29 @@ export function HomeMediaSlot({ slot, title, hint, media }: HomeMediaSlotProps) 
           <>
             <Button
               type="button"
+              variant="outline"
+              className="label-caps"
+              onClick={() => {
+                const path = media.url.split("/api/public/img/")[1];
+                if (!path) return;
+                void setMedia({
+                  data: {
+                    slot,
+                    path,
+                    alt: media.alt,
+                    focal_x: focal.x,
+                    focal_y: focal.y,
+                    is_active: media.is_active,
+                  },
+                })
+                  .then(refresh)
+                  .then(() => toast.success("Enquadramento salvo."));
+              }}
+            >
+              Salvar enquadramento
+            </Button>
+            <Button
+              type="button"
               variant="ghost"
               className="label-caps"
               onClick={() =>
@@ -132,7 +175,14 @@ export function HomeMediaSlot({ slot, title, hint, media }: HomeMediaSlotProps) 
             const path = media.url.split("/api/public/img/")[1];
             if (!path) return;
             void setMedia({
-              data: { slot, path, alt: event.target.value || null },
+              data: {
+                slot,
+                path,
+                alt: event.target.value || null,
+                focal_x: focal.x,
+                focal_y: focal.y,
+                is_active: media.is_active,
+              },
             }).then(refresh);
           }}
         />

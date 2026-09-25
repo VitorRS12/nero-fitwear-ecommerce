@@ -10,6 +10,8 @@ interface HeroProps {
   primaryTo?: string | undefined;
   secondaryLabel?: string | undefined;
   imageUrl?: string | null | undefined;
+  focalX?: number | undefined;
+  focalY?: number | undefined;
 }
 
 export function Hero({
@@ -19,6 +21,8 @@ export function Hero({
   primaryLabel = "Comprar agora",
   secondaryLabel = "Ver lançamentos",
   imageUrl,
+  focalX = 50,
+  focalY = 50,
 }: HeroProps) {
   return (
     <section className="relative overflow-hidden border-b border-border bg-graphite">
@@ -28,6 +32,7 @@ export function Hero({
           alt=""
           aria-hidden="true"
           className="absolute inset-0 h-full w-full object-cover opacity-40"
+          style={{ objectPosition: `${focalX}% ${focalY}%` }}
         />
       ) : null}
       <div className="absolute inset-0 bg-background/40" aria-hidden="true" />
