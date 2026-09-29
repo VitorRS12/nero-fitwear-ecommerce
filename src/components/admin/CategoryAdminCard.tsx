@@ -10,8 +10,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ImagePositionEditor, type ImagePosition } from "@/components/ui/image-position-editor";
 import { supabase } from "@/integrations/supabase/client";
- 
- 
 import { adminSaveCategory } from "@/lib/admin-catalog.functions";
 import {
   PRODUCT_IMAGE_BUCKET,
@@ -36,8 +34,6 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
     x: category?.focal_x ?? 50,
     y: category?.focal_y ?? 50,
   });
- 
- 
   const [position, setPosition] = useState(String(category?.position ?? 0));
   const [isActive, setIsActive] = useState(category?.is_active ?? true);
   const [saving, setSaving] = useState(false);
@@ -50,12 +46,10 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
     setDescription(category?.description ?? "");
     setImageUrl(category?.image_url ?? null);
     setFocal({ x: category?.focal_x ?? 50, y: category?.focal_y ?? 50 });
- 
- 
     setPosition(String(category?.position ?? 0));
     setIsActive(category?.is_active ?? true);
   };
- 
+
   const handleImage = async (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -79,7 +73,6 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
       }
       setImageUrl(storagePathToUrl(path));
       setFocal({ x: 50, y: 50 });
- 
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível enviar a capa.");
     } finally {
@@ -94,8 +87,6 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
     setImageUrl(null);
   };
 
- 
- 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const finalSlug = slugify(slug || name);
@@ -114,8 +105,6 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
           image_url: imageUrl,
           focal_x: focal.x,
           focal_y: focal.y,
- 
- 
           position: Number(position) || 0,
           is_active: isActive,
         },
@@ -156,11 +145,10 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
                 alt="Prévia da capa"
                 value={focal}
                 onChange={setFocal}
-                className="aspect-[4/5]"
+                className="aspect-4/5"
               />
             ) : (
-              <div className="flex aspect-[4/5] items-center justify-center border border-border bg-graphite p-3 text-center text-xs text-muted-foreground">
- 
+              <div className="flex aspect-4/5 items-center justify-center border border-border bg-graphite p-3 text-center text-xs text-muted-foreground">
                 Sem imagem
               </div>
             )}
@@ -190,8 +178,6 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
           </div>
         </div>
       </div>
- 
- 
       <div className="flex flex-wrap items-end gap-6">
         <div className="w-28 space-y-2">
           <Label htmlFor={`category-position-${category?.id ?? "new"}`}>Posição</Label>

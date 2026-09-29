@@ -38,7 +38,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
 
   if (images.length === 0) {
     return (
-      <div className="aspect-[3/4] overflow-hidden bg-graphite">
+      <div className="aspect-3/4 overflow-hidden bg-graphite">
         <ProductThumb alt={alt} priority />
       </div>
     );
@@ -50,7 +50,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
         <CarouselContent>
           {images.map((image, index) => (
             <CarouselItem key={image.id}>
-              <div className="aspect-[3/4] overflow-hidden bg-graphite">
+              <div className="aspect-3/4 overflow-hidden bg-graphite">
                 <ProductThumb
                   url={image.url}
                   alt={image.alt ?? alt}
@@ -81,7 +81,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                 aria-current={current === index}
                 onClick={() => api?.scrollTo(index)}
                 className={cn(
-                  "block aspect-[3/4] w-full overflow-hidden border bg-graphite transition-colors",
+                  "block aspect-3/4 w-full overflow-hidden border bg-graphite transition-colors",
                   current === index ? "border-foreground" : "border-transparent opacity-60",
                 )}
               >

@@ -34,7 +34,7 @@ export function ProductCard({ product, priority }: ProductCardProps) {
         params={{ slug: product.slug }}
         className="block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
       >
-        <div className="relative aspect-[3/4] overflow-hidden bg-graphite">
+        <div className="relative aspect-3/4] overflow-hidden bg-graphite">
           <ProductThumb
             url={image?.url}
             alt={image?.alt ?? product.name}
