@@ -1,7 +1,7 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { CategoryCard } from "@/components/blocks/CategoryCard";
+import { CategoryExplorer } from "@/components/blocks/CatergoryExplorer";
 import { FeatureSection } from "@/components/blocks/FeatureSection";
 import { Hero } from "@/components/blocks/Hero";
 import { Newsletter } from "@/components/blocks/Newsletter";
@@ -29,6 +29,7 @@ export const Route = createFileRoute("/")({
         content: "Tecido técnico, modelagem real e durabilidade para treino pesado.",
       },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:url", content: "/" },
     ],
     links: [{ rel: "canonical", href: "/" }],
@@ -47,48 +48,31 @@ function HomePage() {
   const { data: categories } = useSuspenseQuery(categoriesQuery());
   const featured = useSuspenseQuery(productsQuery({ featured: true, limit: 8 }));
   const novelties = useQuery(productsQuery({ isNew: true, limit: 4 }));
-  
-  const { data: homeMedia } = useSuspenseQuery(homeMediaQuery());
-=======
-  
-  const { data: homeMedia } = useQuery(homeMediaQuery());
-=======
   const { data: homeMedia } = useSuspenseQuery(homeMediaQuery());
   const heroMedia = findSlot(homeMedia, "hero");
   const bannerMedia = findSlot(homeMedia, "banner");
- 
- 
 
   return (
     <StoreLayout>
       <Hero
-<<<<<<< HEAD
-        title={"Health\ncare"}
-        subtitle="Leves e estilosas pensando em você sempre."
-        imageUrl={findSlot(homeMedia, "hero")?.url ?? null}
-=======
         title={"Treine\npesado"}
         subtitle="Peças técnicas feitas para suportar o seu limite: compressão que sustenta, tecido que respira e modelagem que acompanha o movimento."
         imageUrl={heroMedia?.url ?? null}
         focalX={heroMedia?.focal_x}
         focalY={heroMedia?.focal_y}
->>>>>>> 92c577df160c9243350e7ef3b2459606cf14a233
       />
-
 
       <FeatureSection />
 
-      <Section
-        eyebrow="Categorias"
-        title="Escolha seu treino"
-        description="Do levantamento ao asfalto: cada categoria foi desenvolvida para um tipo de esforço."
-      >
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {categories.slice(0, 4).map((category) => (
-            <CategoryCard key={category.id} category={category} />
-          ))}
-        </div>
-      </Section>
+      {categories.length > 0 ? (
+        <Section
+          eyebrow="Categorias"
+          title="Escolha seu treino"
+          description="Do levantamento ao asfalto: cada categoria foi desenvolvida para um tipo de esforço."
+        >
+          <CategoryExplorer categories={categories.slice(0, 4)} />
+        </Section>
+      ) : null}
 
       <Section
         eyebrow="Mais vendidos"

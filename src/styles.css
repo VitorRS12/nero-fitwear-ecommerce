@@ -1,4 +1,4 @@
-@import "tailwindcss/index.css";
+@import "tailwindcss" source;
 @source "../src";
 @import "tw-animate-css";
 
@@ -223,6 +223,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .category-explorer .category-explorer-image,
+  .category-explorer [data-state] {
+    transition-duration: 0s;
+  }
+
+  .category-explorer [role="region"] {
+    animation: none;
+  }
+
   .nero-breathe,
   .nero-orbit,
   .nero-progress {
