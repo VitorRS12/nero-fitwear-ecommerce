@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { isAdminQuery } from "@/services/admin-product.service";
+import { BrandMark } from "../shared/BrandMark";
 
 interface AdminShellProps {
   title: string;
@@ -30,9 +31,9 @@ export function AdminShell({ title, action, children }: AdminShellProps) {
       <header className="border-b border-border">
         <div className="container-nero flex flex-wrap items-center gap-4 py-4">
           <Link to="/" className="font-display text-2xl tracking-wide">
-            NERO
+            <BrandMark />
           </Link>
-          <span className="label-caps text-muted-foreground">Área restrita</span>
+          <span className="flex-1 text-center label-caps text-muted-foreground">Área restrita</span>
           <nav className="ml-auto flex items-center gap-2">
             {isAdmin ? (
               <>

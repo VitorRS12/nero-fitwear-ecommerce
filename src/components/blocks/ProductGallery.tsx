@@ -32,11 +32,9 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
     };
   }, [api]);
 
-  const firstImageId = images[0]?.id;
-
   useEffect(() => {
     if (api) api.scrollTo(0);
-  }, [api, images.length, firstImageId]);
+  }, [api, images.length, images[0]?.id]);
 
   if (images.length === 0) {
     return (
@@ -57,6 +55,8 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                   url={image.url}
                   alt={image.alt ?? alt}
                   priority={index === 0}
+                  focalX={image.focal_x}
+                  focalY={image.focal_y}
                   className="transition-transform duration-500 hover:scale-105"
                 />
               </div>
@@ -85,7 +85,12 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                   current === index ? "border-foreground" : "border-transparent opacity-60",
                 )}
               >
-                <ProductThumb url={image.url} alt={image.alt ?? alt} />
+                <ProductThumb
+                  url={image.url}
+                  alt={image.alt ?? alt}
+                  focalX={image.focal_x}
+                  focalY={image.focal_y}
+                />
               </button>
             </li>
           ))}

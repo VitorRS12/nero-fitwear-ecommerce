@@ -8,7 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+  
 import { supabase } from "@/integrations/supabase/client";
+=======
+  
+=======
+import { ImagePositionEditor, type ImagePosition } from "@/components/ui/image-position-editor";
+import { supabase } from "@/integrations/supabase/client";
+ 
+ 
 import { adminSaveCategory } from "@/lib/admin-catalog.functions";
 import {
   PRODUCT_IMAGE_BUCKET,
@@ -28,7 +36,18 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
   const [name, setName] = useState(category?.name ?? "");
   const [slug, setSlug] = useState(category?.slug ?? "");
   const [description, setDescription] = useState(category?.description ?? "");
+  
   const [imageUrl, setImageUrl] = useState<string | null>(category?.image_url ?? null);
+=======
+  
+=======
+  const [imageUrl, setImageUrl] = useState<string | null>(category?.image_url ?? null);
+  const [focal, setFocal] = useState<ImagePosition>({
+    x: category?.focal_x ?? 50,
+    y: category?.focal_y ?? 50,
+  });
+ 
+ 
   const [position, setPosition] = useState(String(category?.position ?? 0));
   const [isActive, setIsActive] = useState(category?.is_active ?? true);
   const [saving, setSaving] = useState(false);
@@ -39,11 +58,24 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
     setName(category?.name ?? "");
     setSlug(category?.slug ?? "");
     setDescription(category?.description ?? "");
+  
     setImageUrl(category?.image_url ?? null);
+=======
+  
+=======
+    setImageUrl(category?.image_url ?? null);
+    setFocal({ x: category?.focal_x ?? 50, y: category?.focal_y ?? 50 });
+ 
+ 
     setPosition(String(category?.position ?? 0));
     setIsActive(category?.is_active ?? true);
   };
 
+  
+=======
+  
+=======
+ 
   const handleImage = async (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -66,6 +98,10 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
         await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([previousUnsavedPath]);
       }
       setImageUrl(storagePathToUrl(path));
+  
+=======
+      setFocal({ x: 50, y: 50 });
+ 
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível enviar a capa.");
     } finally {
@@ -80,6 +116,10 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
     setImageUrl(null);
   };
 
+  
+=======
+ 
+ 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const finalSlug = slugify(slug || name);
@@ -95,7 +135,16 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
           name: name.trim(),
           slug: finalSlug,
           description: description.trim() || null,
+  
           image_url: imageUrl,
+=======
+  
+=======
+          image_url: imageUrl,
+          focal_x: focal.x,
+          focal_y: focal.y,
+ 
+ 
           position: Number(position) || 0,
           is_active: isActive,
         },
@@ -126,6 +175,7 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
         <Label htmlFor={`category-description-${category?.id ?? "new"}`}>Descrição</Label>
         <Textarea id={`category-description-${category?.id ?? "new"}`} value={description} onChange={(event) => setDescription(event.target.value)} />
       </div>
+  
       <div className="space-y-3">
         <Label>Capa na página inicial</Label>
         <div className="grid gap-3 sm:grid-cols-[10rem_1fr] sm:items-center">
@@ -134,6 +184,24 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
               <img src={imageUrl} alt="Prévia da capa" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center p-3 text-center text-xs text-muted-foreground">
+=======
+  
+=======
+      <div className="space-y-3">
+        <Label>Capa na página inicial</Label>
+        <div className="grid gap-3 sm:grid-cols-[10rem_1fr] sm:items-center">
+          <div>
+            {imageUrl ? (
+              <ImagePositionEditor
+                src={imageUrl}
+                alt="Prévia da capa"
+                value={focal}
+                onChange={setFocal}
+                className="aspect-[4/5]"
+              />
+            ) : (
+              <div className="flex aspect-[4/5] items-center justify-center border border-border bg-graphite p-3 text-center text-xs text-muted-foreground">
+ 
                 Sem imagem
               </div>
             )}
@@ -163,6 +231,10 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
           </div>
         </div>
       </div>
+  
+=======
+ 
+ 
       <div className="flex flex-wrap items-end gap-6">
         <div className="w-28 space-y-2">
           <Label htmlFor={`category-position-${category?.id ?? "new"}`}>Posição</Label>

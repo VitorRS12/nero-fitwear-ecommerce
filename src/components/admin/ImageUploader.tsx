@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ImagePositionEditor, type ImagePosition } from "@/components/ui/image-position-editor";
 import { supabase } from "@/integrations/supabase/client";
 import {
   adminAddImages,
@@ -49,7 +50,7 @@ export function ImageUploader({ productId, images, colors }: ImageUploaderProps)
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
-      const uploaded: { path: string; alt: string | null; color: string | null }[] = [];
+      const uploaded: { path: string; alt: string | null; color: string | null; focal_x: number; focal_y: number }[] = [];
       for (const file of Array.from(files)) {
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const path = `${productId}/${crypto.randomUUID()}.${ext}`;
@@ -57,7 +58,7 @@ export function ImageUploader({ productId, images, colors }: ImageUploaderProps)
           .from(PRODUCT_IMAGE_BUCKET)
           .upload(path, file, { cacheControl: "31536000", upsert: false });
         if (error) throw error;
-        uploaded.push({ path, alt: null, color: null });
+        uploaded.push({ path, alt: null, color: null, focal_x: 50, focal_y: 50 });
       }
       await addImages({ data: { productId, images: uploaded } });
       toast.success(uploaded.length > 1 ? "Fotos enviadas." : "Foto enviada.");
@@ -130,8 +131,15 @@ export function ImageUploader({ productId, images, colors }: ImageUploaderProps)
               onDrop={() => void handleDrop(index)}
               className="space-y-2 border border-border p-2"
             >
-              <div className="relative aspect-[3/4] overflow-hidden bg-graphite">
-                <img src={image.url} alt={image.alt ?? ""} className="h-full w-full object-cover" />
+              <ProductImagePosition
+                image={image}
+                onSave={async (position) => {
+                  await updateImage({
+                    data: { id: image.id, focal_x: position.x, focal_y: position.y },
+                  });
+                  await refresh();
+                }}
+              >
                 {index === 0 ? (
                   <span className="label-caps absolute left-2 top-2 bg-background/90 px-2 py-1">
                     Capa
@@ -140,15 +148,15 @@ export function ImageUploader({ productId, images, colors }: ImageUploaderProps)
                 <span className="absolute right-2 top-2 cursor-grab bg-background/90 p-1">
                   <GripVertical className="size-4" />
                 </span>
-              </div>
+              </ProductImagePosition>
 
               <Input
                 defaultValue={image.alt ?? ""}
                 placeholder="Descrição da imagem"
                 onBlur={(event) =>
-                  void updateImage({
-                    data: { id: image.id, alt: event.target.value || null },
-                  }).then(refresh)
+                  void updateImage({ data: { id: image.id, alt: event.target.value || null } }).then(
+                    refresh,
+                  )
                 }
               />
 
@@ -182,6 +190,50 @@ export function ImageUploader({ productId, images, colors }: ImageUploaderProps)
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function ProductImagePosition({
+  image,
+  onSave,
+  children,
+}: {
+  image: AdminImage;
+  onSave: (position: ImagePosition) => Promise<void>;
+  children: React.ReactNode;
+}) {
+  const [position, setPosition] = useState<ImagePosition>({ x: image.focal_x, y: image.focal_y });
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <ImagePositionEditor
+          src={image.url}
+          alt={image.alt ?? "Prévia da foto"}
+          value={position}
+          onChange={setPosition}
+          className="aspect-[3/4]"
+        />
+        {children}
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="label-caps w-full"
+        disabled={saving}
+        onClick={() => {
+          setSaving(true);
+          void onSave(position)
+            .then(() => toast.success("Enquadramento salvo."))
+            .catch(() => toast.error("Não foi possível salvar o enquadramento."))
+            .finally(() => setSaving(false));
+        }}
+      >
+        {saving ? "Salvando..." : "Salvar enquadramento"}
+      </Button>
     </div>
   );
 }

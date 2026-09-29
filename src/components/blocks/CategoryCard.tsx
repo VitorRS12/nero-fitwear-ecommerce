@@ -13,6 +13,8 @@ export function CategoryCard({ category }: { category: Category }) {
       <ProductThumb
         url={category.image_url}
         alt={category.name}
+        focalX={category.focal_x}
+        focalY={category.focal_y}
         className="transition-transform duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
