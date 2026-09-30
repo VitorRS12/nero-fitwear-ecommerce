@@ -25,7 +25,7 @@ export function CategoryExplorer({ categories }: { categories: Category[] }) {
 
   return (
     <div className="category-explorer grid gap-0 border border-line-subtle bg-surface lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-      <div className="relative aspect-4/5 overflow-hidden bg-graphite sm:aspect-5/4 lg:aspect-auto lg:min-h-740px">
+      <div className="relative aspect-[4/5] overflow-hidden bg-graphite sm:aspect-[5/4] lg:aspect-auto lg:min-h-[740px]">
         {categories.map((category) => (
           <div
             key={category.id}
@@ -58,17 +58,17 @@ export function CategoryExplorer({ categories }: { categories: Category[] }) {
             value={category.id}
             className="group/item min-w-0 border-b border-line-subtle last:border-b-0 data-[state=open]:bg-elevated"
           >
-            <AccordionTrigger className="min-h-20 gap-4 px-5 py-5 text-left no-underline hover:no-underline focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2px focus-visible:outline-ring sm:px-8 [&>svg]:size-5 [&>svg]:text-foreground [&>svg]:group-hover/item:translate-x-1 [&>svg]:motion-reduce:transform-none">
+            <AccordionTrigger className="min-h-20 gap-4 px-5 py-5 text-left no-underline hover:no-underline focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring sm:px-8 [&>svg]:size-5 [&>svg]:text-foreground [&>svg]:group-hover/item:translate-x-1 [&>svg]:motion-reduce:transform-none">
               <span className="flex min-w-0 flex-1 items-baseline gap-5 sm:gap-7">
                 <span className="shrink-0 text-xs font-semibold text-muted-foreground">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <span className="min-w-0 wrap-break-word font-display text-3xl leading-none text-foreground transition-transform duration-300 group-hover/item:translate-x-1 motion-reduce:transform-none sm:text-4xl">
+                <span className="min-w-0 break-words font-display text-3xl leading-none text-foreground transition-transform duration-300 group-hover/item:translate-x-1 motion-reduce:transform-none sm:text-4xl">
                   {category.name}
                 </span>
               </span>
             </AccordionTrigger>
-            <AccordionContent className="pb-8 pl-12 pr-5 pt-0 sm:pl-4.75rem sm:pr-8 motion-reduce:animation:none">
+            <AccordionContent className="pb-8 pl-12 pr-5 pt-0 sm:pl-[4.75rem] sm:pr-8 motion-reduce:[animation:none]">
               {category.description ? (
                 <p className="mb-6 max-w-sm text-sm leading-relaxed text-muted-foreground sm:text-base">
                   {category.description}
