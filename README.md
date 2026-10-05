@@ -2,7 +2,7 @@
 
 **E-commerce de moda fitness em desenvolvimento.** Uma experiência de compra com visual monocromático, catálogo de peças por categoria e uma área restrita para cuidar dos produtos e das imagens da loja.
 
-> **Estado atual:** a navegação, o carrinho e a criação de pedidos pendentes já existem. O pagamento ainda **não** está integrado ao Mercado Pago: selecionar PIX ou cartão não gera cobrança. Não use esta versão para vendas reais.
+> **Estado atual:** PIX integrado ao Mercado Pago para testes. Cartão ainda não está disponível. Não use esta versão para vendas reais sem validar o fluxo completo com contas de teste e configurar a confirmação automática no ambiente publicado.
 
 ## O que já está disponível
 
@@ -11,7 +11,7 @@
 - Página inicial com imagens administráveis, destaques, lançamentos e exploração interativa das categorias.
 - Catálogo por categoria, com busca e filtros; página de produto com galeria de fotos em slide e seleção de cor e tamanho.
 - Sacola com quantidades e persistência no navegador.
-- Cadastro e login; checkout autenticado com dados do cliente, endereço, opções provisórias de frete e criação de pedido **aguardando pagamento**.
+- Cadastro e login; checkout autenticado com endereço, frete provisório e PIX com QR Code e código copia e cola. Pedidos ficam aguardando até confirmação do provedor.
 
 **Na área restrita**
 
@@ -55,9 +55,18 @@ SUPABASE_URL=
 SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_PROJECT_ID=
 SUPABASE_SERVICE_ROLE_KEY=
+MERCADO_PAGO_ACCESS_TOKEN=
+MERCADO_PAGO_WEBHOOK_SECRET=
+LOVABLE_CRON_SECRET=
 ```
 
-A chave `SUPABASE_SERVICE_ROLE_KEY` é **privada**, deve existir apenas no servidor e jamais receber o prefixo `VITE_`. Antes de rodar migrações ou testes de pedidos, confirme que as variáveis e o destino da CLI apontam para o projeto **de teste** desejado; o checkout atual altera o estoque ao criar o pedido pendente.
+As chaves privadas ficam apenas no servidor e jamais recebem prefixo `VITE_`. Antes de rodar migrações ou testar pedidos, confirme que as variáveis e a CLI apontam para o projeto **de teste** desejado. O estoque é reservado na criação do pedido; não faça testes com pagamentos reais.
+
+### Testar PIX
+
+Use credenciais de teste do Mercado Pago e configure a notificação de pagamentos para a URL HTTPS `<ORIGEM-DO-SITE>/api/public/mercado-pago/webhook`. Na máquina local, exponha temporariamente essa rota com um túnel HTTPS; `localhost` não recebe notificações externas. O retorno é conferido com o Mercado Pago e uma consulta da tela também verifica o estado do pedido.
+
+Para liberar reservas de cobranças expiradas, agende uma chamada `POST` a `<ORIGEM-DO-SITE>/api/public/mercado-pago/expire` com o cabeçalho `Authorization: Bearer <LOVABLE_CRON_SECRET>` em intervalos regulares. A limpeza consulta o provedor e cancela a cobrança pendente antes de devolver o estoque; ela não está agendada automaticamente. Não use a função SQL `release_expired_pix_orders()` diretamente, pois ela não consulta o provedor. Teste pagamento aprovado, expirado e notificações repetidas antes de publicar para compradores.
 
 > **Antes de tornar o repositório público:** o arquivo `.env` já está versionado neste projeto. Revise seu conteúdo e histórico, retire segredos do Git e substitua quaisquer chaves privadas que tenham sido expostas. Usar `.env.local` daqui em diante não apaga segredos de commits antigos.
 
@@ -120,8 +129,8 @@ O [guia técnico completo](GUIA_TECNICO_NERO_FITWEAR.md) traz mais detalhes sobr
 
 ## Próximos passos antes de vender
 
-- Integrar o PIX ao Mercado Pago, com cobrança no servidor, confirmação segura por notificação e possibilidade de retomar pagamentos pendentes.
-- Rever a reserva e a devolução de estoque quando um pagamento falhar, expirar ou for abandonado.
+- Validar ponta a ponta PIX aprovado, recusado e expirado com usuários de teste; agendar a limpeza de reservas e configurar notificações HTTPS.
+- Implementar cartão apenas em uma etapa futura, com tokenização apropriada.
 - Validar fretes, textos comerciais e imagens oficiais da marca; conectar serviços reais para newsletter e comunicações, se forem utilizados.
 - Testar o fluxo completo em um Supabase de teste antes de habilitar compras em produção.
 

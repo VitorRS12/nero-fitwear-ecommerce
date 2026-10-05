@@ -1,6 +1,8 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+import markAsset from "@/assets/nero-mark.png.asset.json";
+
 const SHOW_DELAY_MS = 120;
 
 /**
@@ -9,7 +11,7 @@ const SHOW_DELAY_MS = 120;
  */
 export function RouteLoadingOverlay() {
   const isNavigating = useRouterState({
-    select: (state) => state.isLoading || state.isTransitioning || state.status === "pending",
+    select: (state) => state.isLoading || state.status === "pending",
   });
   const [visible, setVisible] = useState(false);
 
@@ -38,14 +40,14 @@ export function RouteLoadingOverlay() {
       </div>
 
       <div className="flex flex-col items-center gap-6">
-        <div className="relative flex h-30 w-30 items-center justify-center">
+        <div className="relative flex h-24 w-24 items-center justify-center">
           <span className="absolute inset-0 rounded-full border border-border" />
           <span className="nero-orbit absolute inset-0 rounded-full border border-transparent border-t-foreground" />
           <img
-            src="/brand/nero-mark-loading.png"
+            src={markAsset.url}
             alt=""
             aria-hidden
-            className="nero-breathe h-34 w-34 object-contain"
+            className="nero-breathe h-12 w-12 object-contain"
           />
         </div>
         <span className="label-caps text-muted-foreground">Carregando</span>
