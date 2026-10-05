@@ -98,7 +98,7 @@ export const createPendingOrder = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (data.paymentMethod !== "pix") throw new Error("Nesta etapa, escolha PIX.");
     const token = process.env['MERCADO_PAGO_ACCESS_TOKEN'];
-    if (!token?.startsWith("TEST-")) throw new Error("Para validar o PIX, configure uma credencial de teste do Mercado Pago.");
+    if (!token?.startsWith("APP_USR-")) throw new Error("Para validar o PIX, configure uma credencial de teste do Mercado Pago.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order, error } = await supabaseAdmin.rpc("create_pending_order", {
       _user_id: context.userId,
