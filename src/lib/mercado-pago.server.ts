@@ -27,6 +27,59 @@ interface CreatePixInput {
   idempotencyKey: string;
 }
 
+interface CreatePixPayload {
+  transaction_amount: number;
+  description: string;
+  payment_method_id: "pix";
+  external_reference: string;
+  date_of_expiration: string;
+  payer: {
+    email: string;
+    first_name: string;
+    last_name: string;
+    identification: { type: "CPF"; number: string };
+  };
+  metadata: { order_id: string; order_number: string };
+}
+
+const MERCADO_PAGO_UTC_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+
+export function normalizeMercadoPagoExpiration(value: unknown, now = Date.now()): string {
+  if (typeof value !== "string") {
+    throw new Error("A validade do PIX não foi informada corretamente.");
+  }
+
+  const timestamp = Date.parse(value.trim());
+  if (!Number.isFinite(timestamp)) {
+    throw new Error("A validade do PIX possui uma data inválida.");
+  }
+
+  const normalized = new Date(timestamp).toISOString().replace(/\.\d{3}Z$/, "Z");
+  if (!MERCADO_PAGO_UTC_DATE_PATTERN.test(normalized) || timestamp <= now) {
+    throw new Error("A validade do PIX deve ser uma data futura em ISO 8601.");
+  }
+
+  return normalized;
+}
+
+export function buildCreatePixPayload(input: CreatePixInput, now = Date.now()): CreatePixPayload {
+  const expirationDate = normalizeMercadoPagoExpiration(input.expiresAt, now);
+  return {
+    transaction_amount: Number(input.amount.toFixed(2)),
+    description: `Pedido ${input.orderNumber}`,
+    payment_method_id: "pix",
+    external_reference: input.orderId,
+    date_of_expiration: expirationDate,
+    payer: {
+      email: input.email,
+      first_name: input.firstName,
+      last_name: input.lastName,
+      identification: { type: "CPF", number: input.cpf },
+    },
+    metadata: { order_id: input.orderId, order_number: input.orderNumber },
+  };
+}
+
 function accessToken(): string {
   const token = process.env['MERCADO_PAGO_ACCESS_TOKEN'];
   if (!token) throw new Error("Mercado Pago ainda não foi configurado.");
@@ -51,23 +104,14 @@ async function mercadoPagoRequest<T>(path: string, init?: RequestInit): Promise<
 }
 
 export function createPixPayment(input: CreatePixInput): Promise<MercadoPagoPayment> {
+  const payload = buildCreatePixPayload(input);
+  if (process.env['NODE_ENV'] !== "production") {
+    console.info(`[mercado-pago] date_of_expiration: ${payload.date_of_expiration}`);
+  }
   return mercadoPagoRequest<MercadoPagoPayment>("/v1/payments", {
     method: "POST",
     headers: { "X-Idempotency-Key": input.idempotencyKey },
-    body: JSON.stringify({
-      transaction_amount: Number(input.amount.toFixed(2)),
-      description: `Pedido ${input.orderNumber}`,
-      payment_method_id: "pix",
-      external_reference: input.orderId,
-      date_of_expiration: input.expiresAt,
-      payer: {
-        email: input.email,
-        first_name: input.firstName,
-        last_name: input.lastName,
-        identification: { type: "CPF", number: input.cpf },
-      },
-      metadata: { order_id: input.orderId, order_number: input.orderNumber },
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
