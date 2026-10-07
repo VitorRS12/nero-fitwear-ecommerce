@@ -42,19 +42,26 @@ interface CreatePixPayload {
   metadata: { order_id: string; order_number: string };
 }
 
-const MERCADO_PAGO_UTC_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+const ISO_DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/;
+const MERCADO_PAGO_UTC_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+00:00$/;
 
 export function normalizeMercadoPagoExpiration(value: unknown, now = Date.now()): string {
   if (typeof value !== "string") {
     throw new Error("A validade do PIX não foi informada corretamente.");
   }
 
-  const timestamp = Date.parse(value.trim());
+  const source = value.trim();
+  if (!ISO_DATE_INPUT_PATTERN.test(source)) {
+    throw new Error("A validade do PIX possui uma data inválida.");
+  }
+  const timestamp = Date.parse(source);
   if (!Number.isFinite(timestamp)) {
     throw new Error("A validade do PIX possui uma data inválida.");
   }
 
-  const normalized = new Date(timestamp).toISOString().replace(/\.\d{3}Z$/, "Z");
+  // Keep the instant in UTC, using the explicit offset and milliseconds shown
+  // in Mercado Pago's date format. Do not shift to Brazil's local timezone.
+  const normalized = new Date(timestamp).toISOString().replace(/Z$/, "+00:00");
   if (!MERCADO_PAGO_UTC_DATE_PATTERN.test(normalized) || timestamp <= now) {
     throw new Error("A validade do PIX deve ser uma data futura em ISO 8601.");
   }
@@ -105,9 +112,8 @@ async function mercadoPagoRequest<T>(path: string, init?: RequestInit): Promise<
 
 export function createPixPayment(input: CreatePixInput): Promise<MercadoPagoPayment> {
   const payload = buildCreatePixPayload(input);
-  if (process.env['NODE_ENV'] !== "production") {
-    console.info(`[mercado-pago] date_of_expiration: ${payload.date_of_expiration}`);
-  }
+  // Safe in production too: only the final expiration, never payer data or keys.
+  console.info(`[mercado-pago] date_of_expiration: ${payload.date_of_expiration}`);
   return mercadoPagoRequest<MercadoPagoPayment>("/v1/payments", {
     method: "POST",
     headers: { "X-Idempotency-Key": input.idempotencyKey },
