@@ -120,6 +120,14 @@ export function getMercadoPagoPayment(paymentId: string): Promise<MercadoPagoPay
   return mercadoPagoRequest<MercadoPagoPayment>(`/v1/payments/${paymentId}`);
 }
 
+export async function findMercadoPagoPaymentsByReference(reference: string): Promise<MercadoPagoPayment[]> {
+  if (!/^[0-9a-f-]{36}$/i.test(reference)) throw new Error("Referência inválida.");
+  const result = await mercadoPagoRequest<{ results?: MercadoPagoPayment[] }>(
+    `/v1/payments/search?external_reference=${reference}`,
+  );
+  return (result.results ?? []).filter((payment) => payment.external_reference === reference);
+}
+
 export function cancelMercadoPagoPayment(paymentId: string): Promise<MercadoPagoPayment> {
   if (!/^\d{1,30}$/.test(paymentId)) throw new Error("Pagamento inválido.");
   return mercadoPagoRequest<MercadoPagoPayment>(`/v1/payments/${paymentId}`, {
