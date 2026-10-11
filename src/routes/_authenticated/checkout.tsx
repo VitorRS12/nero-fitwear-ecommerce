@@ -3,6 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Copy } from "lucide-react";
+import { CardCheckout } from "@/components/forms/CardCheckout";
+import { prepareCardOrder } from "@/lib/card-checkout.functions";
+import type { CardOrder } from "@/types/card-payment";
 
 import { Section } from "@/components/blocks/Section";
 import { StoreLayout } from "@/components/layout/StoreLayout";
@@ -19,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout — NERO Fitwear" },
-      { name: "description", content: "Finalize seu pedido com PIX." },
+      { name: "description", content: "Finalize seu pedido com PIX, cartão de crédito ou débito pelo Mercado Pago." },
       { property: "og:title", content: "Checkout — NERO Fitwear" },
       { property: "og:description", content: "Finalize seu pedido com segurança." },
       { property: "og:type", content: "website" },
@@ -35,6 +38,9 @@ export const Route = createFileRoute("/_authenticated/checkout")({
 function CheckoutPage() {
   const { items, coupon, totals, clear } = useCart();
   const createOrder = useServerFn(createPendingOrder);
+  const prepareCard = useServerFn(prepareCardOrder);
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "card">("pix");
+  const [cardOrder, setCardOrder] = useState<CardOrder | null>(null);
   const fetchOrder = useServerFn(getPixOrder);
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "" });
   const [cpf, setCpf] = useState("");
@@ -53,6 +59,8 @@ function CheckoutPage() {
   useEffect(() => {
     const stored = window.localStorage.getItem("nero.pix.pendingOrder");
     if (stored) setPendingOrderId(stored);
+    const cardId = window.localStorage.getItem("nero.card.pendingOrder");
+    if (cardId) setCardOrder({ id: cardId, orderNumber: "Pedido", total: 0, paymentStatus: "pending", paymentId: null, statusDetail: "processing", challenge: null });
   }, []);
   useEffect(() => {
     if (!pendingOrderId) return;
@@ -93,6 +101,15 @@ function CheckoutPage() {
     try {
       const key = checkoutKey ?? crypto.randomUUID();
       setCheckoutKey(key);
+      if (paymentMethod === "card") {
+        const prepared = await prepareCard({ data: { customer, address,
+          shippingMethod: shippingMethod as "standard" | "express", checkoutKey: key,
+          couponCode: coupon?.code ?? "", items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+        } });
+        window.localStorage.setItem("nero.card.pendingOrder", prepared.id);
+        setCardOrder(prepared);
+        return;
+      }
       const created = await createOrder({
         data: {
           customer,
@@ -116,6 +133,14 @@ function CheckoutPage() {
       setSubmitting(false);
     }
   };
+
+  if (cardOrder) {
+    return <StoreLayout><Section eyebrow="Pagamento com cartão" title="Finalizar pagamento">
+      <CardCheckout initialOrder={cardOrder} email={customer.email} cpf={cpf}
+        onPaid={() => { clear(); window.localStorage.removeItem("nero.card.pendingOrder"); }}
+        onBack={() => { window.localStorage.removeItem("nero.card.pendingOrder"); setCardOrder(null); setCheckoutKey(null); }} />
+    </Section></StoreLayout>;
+  }
 
   if (order) {
     return (
@@ -174,7 +199,7 @@ function CheckoutPage() {
                 <Field id="name" label="Nome completo" value={customer.name} onChange={(value) => updateCustomer("name", value)} autoComplete="name" />
                 <Field id="email" label="E-mail" type="email" value={customer.email} onChange={(value) => updateCustomer("email", value)} autoComplete="email" />
                 <Field id="phone" label="Telefone" value={customer.phone} onChange={(value) => updateCustomer("phone", value)} autoComplete="tel" />
-                <Field id="cpf" label="CPF para o PIX" value={cpf} onChange={(value) => setCpf(value.replace(/\D/g, "").slice(0, 11))} inputMode="numeric" pattern="[0-9]{11}" maxLength={11} autoComplete="off" />
+                <Field id="cpf" label="CPF para pagamento" value={cpf} onChange={(value) => setCpf(value.replace(/\D/g, "").slice(0, 11))} inputMode="numeric" pattern="[0-9]{11}" maxLength={11} autoComplete="off" />
               </div>
             </fieldset>
 
@@ -197,8 +222,9 @@ function CheckoutPage() {
               )) : <p className="text-sm text-muted-foreground">Informe a UF para ver as opções de entrega.</p>}
             </ChoiceGroup>
 
-            <ChoiceGroup title="Pagamento" value="pix" onValueChange={() => {}}>
+            <ChoiceGroup title="Pagamento" value={paymentMethod} onValueChange={(value) => { setPaymentMethod(value as "pix" | "card"); setCheckoutKey(null); }}>
               <Choice id="payment-pix" value="pix" label="PIX" detail="QR Code ou copia e cola" />
+              <Choice id="payment-card" value="card" label="Crédito ou débito" detail="Parcelas conforme Mercado Pago" />
             </ChoiceGroup>
           </div>
 
@@ -211,7 +237,7 @@ function CheckoutPage() {
               <div className="flex justify-between border-t border-border pt-3 text-base font-semibold"><dt>Total</dt><dd>{formatCurrency(previewTotal)}</dd></div>
             </dl>
             <Button type="submit" size="lg" className="label-caps w-full" disabled={submitting || !selectedShipping}>
-              {submitting ? "Gerando PIX..." : "Gerar PIX"}
+              {submitting ? "Preparando pagamento..." : paymentMethod === "pix" ? "Gerar PIX" : "Continuar para cartão"}
             </Button>
             <p className="text-xs text-muted-foreground">O pedido é confirmado após o Mercado Pago aprovar o pagamento.</p>
           </aside>

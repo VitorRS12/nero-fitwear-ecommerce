@@ -10,6 +10,10 @@ export interface MercadoPagoPayment {
   date_approved?: string;
   date_of_expiration?: string;
   payment_method_id?: string;
+  payment_type_id?: string;
+  installments?: number;
+  metadata?: { attempt_key?: string };
+  three_ds_info?: { external_resource_url?: string; creq?: string };
   point_of_interaction?: {
     transaction_data?: { qr_code?: string; qr_code_base64?: string; ticket_url?: string };
   };
@@ -93,7 +97,7 @@ function accessToken(): string {
   return token;
 }
 
-async function mercadoPagoRequest<T>(path: string, init?: RequestInit): Promise<T> {
+export async function mercadoPagoRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${MERCADO_PAGO_API}${path}`, {
     ...init,
     headers: {
@@ -104,8 +108,8 @@ async function mercadoPagoRequest<T>(path: string, init?: RequestInit): Promise<
   });
   const text = await response.text();
   if (!response.ok) {
-    console.error(`[mercado-pago] request failed [${response.status}]: ${text}`);
-    throw new Error("O Mercado Pago não conseguiu processar o PIX.");
+    console.error(`[mercado-pago] request failed [${response.status}]`);
+    throw new Error("O Mercado Pago não conseguiu processar o pagamento. Tente novamente ou consulte seu pedido.");
   }
   return JSON.parse(text) as T;
 }
@@ -150,6 +154,8 @@ export function paymentSnapshot(payment: MercadoPagoPayment) {
     external_reference: payment.external_reference ?? null,
     transaction_amount: payment.transaction_amount,
     payment_method_id: payment.payment_method_id ?? null,
+    payment_type_id: payment.payment_type_id ?? null,
+    installments: payment.installments ?? null,
     date_created: payment.date_created ?? null,
     date_approved: payment.date_approved ?? null,
     date_of_expiration: payment.date_of_expiration ?? null,

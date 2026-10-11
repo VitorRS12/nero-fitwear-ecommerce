@@ -790,6 +790,14 @@ export type Database = {
         }
         Returns: Json
       }
+      begin_card_payment: {
+        Args: { _attempt_key: string; _order_id: string; _user_id: string }
+        Returns: Json
+      }
+      cancel_unsubmitted_card_order: {
+        Args: { _order_id: string; _user_id: string }
+        Returns: boolean
+      }
       commit_variant_stock: {
         Args: { _order_id: string; _quantity: number; _variant_id: string }
         Returns: boolean
@@ -816,6 +824,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_card_payment: {
+        Args: {
+          _amount: number
+          _attempt_key: string
+          _order_id: string
+          _payload: Json
+          _payment_id: string
+        }
+        Returns: boolean
+      }
+      release_abandoned_card_orders: { Args: never; Returns: number }
       release_expired_pix_orders: { Args: never; Returns: number }
       release_order_reservation: {
         Args: { _order_id: string }

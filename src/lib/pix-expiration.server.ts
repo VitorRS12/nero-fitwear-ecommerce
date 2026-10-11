@@ -11,9 +11,12 @@ import {
  * confirma que não há cobrança ativa para o pedido.
  */
 export async function releaseExpiredPixOrders(limit = 100) {
+  const { error: abandonedError } = await supabaseAdmin.rpc("release_abandoned_card_orders");
+  if (abandonedError) console.error("[card-expire] abandoned checkout cleanup failed");
   const { data: orders, error } = await supabaseAdmin
     .from("orders")
     .select("id, payments(provider_payment_id)")
+    .eq("payment_method", "pix")
     .eq("status", "awaiting_payment")
     .eq("payment_status", "pending")
     .is("inventory_released_at", null)

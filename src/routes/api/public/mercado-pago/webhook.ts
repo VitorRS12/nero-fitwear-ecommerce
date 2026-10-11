@@ -35,6 +35,11 @@ export const Route = createFileRoute("/api/public/mercado-pago/webhook")({
         try {
           const payment = await mercadoPago.getMercadoPagoPayment(dataId);
           const orderId = z.string().uuid().parse(payment.external_reference);
+          if (["credit_card", "debit_card"].includes(payment.payment_type_id ?? "")) {
+            const { reconcileCardPayment } = await import("@/lib/card-payment-reconcile.server");
+            await reconcileCardPayment(orderId, payment);
+            return new Response("ok");
+          }
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { error } = await supabaseAdmin.rpc("apply_mercado_pago_payment", {
             _order_id: orderId,
