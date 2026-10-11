@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const checkoutSchema = z.object({
+export const checkoutSchema = z.object({
   customer: z.object({
     name: z.string().trim().min(2).max(120),
     email: z.string().trim().email().max(200),
