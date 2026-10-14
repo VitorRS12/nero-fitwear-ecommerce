@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildCardPayload, cardResult, createCardPayment } from "./card-payment.server";
 import { cardSubmissionSchema } from "./card-payment.schema";
-import { paymentSnapshot } from "./mercado-pago.server";
+import { getMercadoPagoPayment, paymentSnapshot } from "./mercado-pago.server";
 
 const orderId = "a7ce16e0-b512-4eff-a364-0fb1c62df790";
 const attemptKey = "2c1a2a8d-0b91-4003-93b2-478535807e32";
@@ -12,6 +12,27 @@ const input = { orderId, orderNumber: "NERO-1001", amount: 129.9, attemptKey,
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("card payment boundary", () => {
+  it("queries the numeric provider payment ID, not the local order UUID", async () => {
+    vi.stubEnv("MERCADO_PAGO_ACCESS_TOKEN", "isolated-test-credential");
+    const request = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      id: 123, status: "approved", external_reference: orderId, transaction_amount: 129.9,
+    })));
+    vi.stubGlobal("fetch", request);
+    expect(await getMercadoPagoPayment("123")).toMatchObject({ id: 123, external_reference: orderId });
+    expect(request.mock.calls[0]?.[0]).toBe("https://api.mercadopago.com/v1/payments/123");
+    expect(() => getMercadoPagoPayment(orderId)).toThrow("Pagamento inválido");
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not automatically retry a provider failure", async () => {
+    vi.stubEnv("MERCADO_PAGO_ACCESS_TOKEN", "isolated-test-credential");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const request = vi.fn<typeof fetch>().mockResolvedValue(new Response("{}", { status: 503 }));
+    vi.stubGlobal("fetch", request);
+    await expect(getMercadoPagoPayment("123")).rejects.toThrow("processar o pagamento");
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps order, amount, attempt and card token separate without PIX expiration", () => {
     const payload = buildCardPayload(input);
     expect(payload.external_reference).toBe(orderId);

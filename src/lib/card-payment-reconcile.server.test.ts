@@ -33,4 +33,21 @@ describe("atomic card reconciliation", () => {
     mocks.rpc.mockResolvedValue({ error: { message: "amount mismatch" } });
     await expect(reconcileCardPayment(orderId, payment)).rejects.toThrow("registrar");
   });
+  it.each(["approved", "rejected", "in_process"])("forwards %s without falsely approving the payment", async (status) => {
+    await reconcileCardPayment(orderId, { ...payment, status });
+    expect(mocks.rpc).toHaveBeenCalledWith("record_card_payment", expect.objectContaining({
+      _payload: expect.objectContaining({ status }),
+    }));
+  });
+  it("does not write when the local attempt is missing", async () => {
+    mocks.single.mockResolvedValue({ data: null, error: { message: "missing" } });
+    await expect(reconcileCardPayment(orderId, payment)).rejects.toThrow("Cobrança não registrada");
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("forwards repeated notifications to the atomic RPC (does not prove database idempotence)", async () => {
+    await reconcileCardPayment(orderId, payment);
+    await reconcileCardPayment(orderId, payment);
+    expect(mocks.rpc).toHaveBeenCalledTimes(2);
+    expect(mocks.rpc.mock.calls[0]).toEqual(mocks.rpc.mock.calls[1]);
+  });
 });
