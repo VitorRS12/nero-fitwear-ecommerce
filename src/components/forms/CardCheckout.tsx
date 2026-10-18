@@ -71,8 +71,12 @@ export function CardCheckout({ initialOrder, email, cpf, onPaid, onBack }: {
           void status.refetch();
         } catch (error) {
           toast.error(error instanceof Error ? error.message : "Não foi possível processar o pagamento.");
-          // Preserve the same key after an uncertain outcome; never create a second charge.
-          void status.refetch();
+          // Keep the key after an uncertain outcome; only drop it when the server confirms nothing started.
+          const fresh = await status.refetch();
+          if (fresh.data && !fresh.data.statusDetail && !fresh.data.paymentId) {
+            attemptKey.current = null;
+            window.sessionStorage.removeItem(storageKey);
+          }
         } finally { submittingRef.current = false; setWorking(false); }
       }} /> : null}
     {status.isError ? <div role="alert"><p className="text-sm text-muted-foreground">Não foi possível atualizar o pagamento.</p><Button variant="outline" onClick={() => void status.refetch()}>Consultar novamente</Button></div> : null}

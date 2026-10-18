@@ -97,6 +97,28 @@ function accessToken(): string {
   return token;
 }
 
+/** Provider error. 4xx means Mercado Pago rejected the request and created nothing. */
+export class MercadoPagoError extends Error {
+  constructor(message: string, readonly status: number, readonly providerMessage: string) {
+    super(message);
+    this.name = "MercadoPagoError";
+  }
+  get definitelyNotCreated() {
+    return this.status >= 400 && this.status < 500 && this.status !== 409 && this.status !== 429;
+  }
+}
+
+function safeProviderMessage(text: string): string {
+  try {
+    const body = JSON.parse(text) as { message?: unknown; cause?: Array<{ code?: unknown }> };
+    const codes = (body.cause ?? []).map((entry) => String(entry.code ?? "")).filter(Boolean).join(",");
+    // Only the provider's parameter-level message and codes; never request bodies or tokens.
+    return `${String(body.message ?? "").slice(0, 200)}${codes ? ` (codes: ${codes})` : ""}`;
+  } catch {
+    return "";
+  }
+}
+
 export async function mercadoPagoRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${MERCADO_PAGO_API}${path}`, {
     ...init,
@@ -108,8 +130,14 @@ export async function mercadoPagoRequest<T>(path: string, init?: RequestInit): P
   });
   const text = await response.text();
   if (!response.ok) {
+    const detail = safeProviderMessage(text);
     console.error(`[mercado-pago] request failed [${response.status}]`);
-    throw new Error("O Mercado Pago não conseguiu processar o pagamento. Tente novamente ou consulte seu pedido.");
+    if (detail) console.error(`[mercado-pago] provider message: ${detail}`);
+    throw new MercadoPagoError(
+      "O Mercado Pago não conseguiu processar o pagamento. Tente novamente ou consulte seu pedido.",
+      response.status,
+      detail,
+    );
   }
   return JSON.parse(text) as T;
 }

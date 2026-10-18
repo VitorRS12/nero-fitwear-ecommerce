@@ -77,8 +77,21 @@ export const submitCardOrder = createServerFn({ method: "POST" })
       : (await provider.findMercadoPagoPaymentsByReference(order.id)).find((entry) => entry.metadata?.attempt_key === locked.attemptKey);
     if (!found && locked.attemptKey !== data.attemptKey)
       throw new Error("Há uma tentativa em processamento. Aguarde a confirmação antes de pagar novamente.");
-    const payment = found ?? await createCardPayment({ orderId: order.id, orderNumber: order.order_number,
-      amount: order.total, attemptKey: locked.attemptKey, card: data.card });
+    let payment;
+    try {
+      payment = found ?? await createCardPayment({ orderId: order.id, orderNumber: order.order_number,
+        amount: order.total, attemptKey: locked.attemptKey, card: data.card });
+    } catch (providerError) {
+      // A 4xx means Mercado Pago created nothing: drop the empty attempt so the buyer can retry with a new key.
+      // Uncertain failures (network/5xx) keep the attempt locked to avoid a second charge.
+      if (providerError instanceof provider.MercadoPagoError && providerError.definitelyNotCreated) {
+        await supabaseAdmin.from("payments").delete().eq("order_id", order.id).eq("provider", "mercadopago")
+          .eq("idempotency_key", locked.attemptKey).is("provider_payment_id", null);
+        throw new Error("O Mercado Pago recusou os dados do cartão. Confira as informações e tente novamente.");
+      }
+      if (providerError instanceof Error && !(providerError instanceof provider.MercadoPagoError)) throw providerError;
+      throw new Error("Não foi possível confirmar o pagamento agora. Aguarde alguns instantes e consulte o pedido.");
+    }
     const { reconcileCardPayment } = await import("@/lib/card-payment-reconcile.server");
     await reconcileCardPayment(order.id, payment);
     const { data: updated } = await context.supabase.from("orders").select("payment_status").eq("id", order.id).eq("user_id", context.userId).single();

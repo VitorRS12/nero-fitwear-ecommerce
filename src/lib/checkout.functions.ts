@@ -55,7 +55,7 @@ const orderIdSchema = z.object({ orderId: z.string().uuid() });
 
 export const getPixOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: unknown) => orderIdSchema.parse(input))
+  .inputValidator((input: unknown) => orderIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: order, error } = await context.supabase
       .from("orders")
@@ -117,12 +117,12 @@ export const getPixOrder = createServerFn({ method: "POST" })
 
 export const createPendingOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: unknown) => checkoutSchema.parse(input))
+  .inputValidator((input: unknown) => checkoutSchema.parse(input))
   .handler(async ({ data, context }) => {
     if (data.paymentMethod !== "pix") throw new Error("Nesta etapa, escolha PIX.");
     const token = process.env["MERCADO_PAGO_ACCESS_TOKEN"];
-    if (!token?.startsWith("APP_USR-"))
-      throw new Error("Para validar o PIX, configure uma credencial de teste do Mercado Pago.");
+    if (!token || !/^(APP_USR|TEST)-/.test(token))
+      throw new Error("O PIX ainda não foi configurado na loja.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try {
       const { releaseExpiredPixOrders } = await import("@/lib/pix-expiration.server");
@@ -169,24 +169,41 @@ export const createPendingOrder = createServerFn({ method: "POST" })
       } satisfies PixOrderResult;
     }
 
-    // A chave deriva do pedido persistido: novas tentativas usam a mesma chave no provedor.
+    if (Date.parse(pendingOrder.paymentExpiresAt) - Date.now() < 60_000)
+      throw new Error("O prazo deste pedido terminou. Volte à sacola e finalize uma nova compra.");
+
     // Nunca devolva o CPF nem a resposta bruta do provedor ao navegador.
-    const { createPixPayment, pixInstructions, paymentSnapshot } = await import("@/lib/mercado-pago.server");
+    const { createPixPayment, findMercadoPagoPaymentsByReference, MercadoPagoError, pixInstructions, paymentSnapshot } =
+      await import("@/lib/mercado-pago.server");
+    // Recupera um PIX criado no provedor cujo registro local não foi salvo, evitando cobrança duplicada.
+    const remote = (await findMercadoPagoPaymentsByReference(pendingOrder.id)).find(
+      (entry) => entry.payment_method_id === "pix" && entry.status === "pending" && pixInstructions(entry).copyPaste,
+    );
+    // Cada tentativa usa uma chave nova: o Mercado Pago repete a mesma resposta (inclusive erros 400)
+    // para uma chave já usada, o que travava pedidos com a chave fixa no ID do pedido.
+    const attemptKey = crypto.randomUUID();
     const words = data.customer.name.trim().split(/\s+/);
-    const payment = await createPixPayment({
-      orderId: pendingOrder.id,
-      orderNumber: pendingOrder.orderNumber,
-      amount: pendingOrder.total,
-      email: data.customer.email,
-      firstName: words[0] ?? data.customer.name,
-      lastName: words.slice(1).join(" ") || words[0] || data.customer.name,
-      cpf: data.cpf,
-      expiresAt: pendingOrder.paymentExpiresAt,
-      idempotencyKey: pendingOrder.id,
-    });
+    let payment;
+    try {
+      payment = remote ?? await createPixPayment({
+        orderId: pendingOrder.id,
+        orderNumber: pendingOrder.orderNumber,
+        amount: pendingOrder.total,
+        email: data.customer.email,
+        firstName: words[0] ?? data.customer.name,
+        lastName: words.slice(1).join(" ") || words[0] || data.customer.name,
+        cpf: data.cpf,
+        expiresAt: pendingOrder.paymentExpiresAt,
+        idempotencyKey: attemptKey,
+      });
+    } catch (providerError) {
+      if (providerError instanceof MercadoPagoError && providerError.definitelyNotCreated)
+        throw new Error("O Mercado Pago recusou os dados do PIX. Confira CPF, nome e e-mail e tente novamente.");
+      throw providerError;
+    }
     if (
       payment.external_reference !== pendingOrder.id ||
-      Number(payment.transaction_amount) !== Number(pendingOrder.total)
+      Math.abs(Number(payment.transaction_amount) - Number(pendingOrder.total)) > 0.009
     ) {
       throw new Error("A cobrança não corresponde ao pedido. Entre em contato com a loja.");
     }
@@ -200,7 +217,7 @@ export const createPendingOrder = createServerFn({ method: "POST" })
       method: "pix",
       amount: pendingOrder.total,
       status: "pending",
-      idempotency_key: pendingOrder.id,
+      idempotency_key: attemptKey,
       pix_copy_paste: instructions.copyPaste,
       pix_qr_code_base64: instructions.qrCodeBase64,
       ticket_url: instructions.ticketUrl,
