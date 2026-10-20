@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getStripeOrder, type StripeOrder } from "@/lib/checkout.functions";
 import { formatCurrency } from "@/lib/format";
+import { OrderSummary, type SummaryData } from "./OrderSummary";
+import { storeAppearance } from "./stripe-appearance";
 
 const stripeCache = new Map<string, ReturnType<typeof loadStripe>>();
 function getStripePromise(key: string) {
@@ -15,11 +17,13 @@ function getStripePromise(key: string) {
   return stripeCache.get(key)!;
 }
 
-export function StripeCheckout({ initialOrder, onPaid, onBack }: {
-  initialOrder: StripeOrder; onPaid: () => void; onBack: () => void;
+export function StripeCheckout({ initialOrder, summary, onPaid, onBack }: {
+  initialOrder: StripeOrder; summary?: SummaryData | null; onPaid: () => void; onBack: () => void;
 }) {
   const fetchOrder = useServerFn(getStripeOrder);
   const [order, setOrder] = useState(initialOrder);
+  const [appearance, setAppearance] = useState<ReturnType<typeof storeAppearance> | null>(null);
+  useEffect(() => { setAppearance(storeAppearance()); }, []);
 
   useEffect(() => {
     if (order.paymentStatus !== "pending") return;
@@ -39,39 +43,47 @@ export function StripeCheckout({ initialOrder, onPaid, onBack }: {
 
   const stripePromise = useMemo(() => getStripePromise(order.publishableKey), [order.publishableKey]);
 
+  let body: React.ReactNode;
   if (order.paymentStatus === "approved") {
-    return <Panel order={order}><p role="status" className="text-sm">Pagamento aprovado. Seu pedido foi confirmado.</p>
-      <Button asChild className="label-caps"><Link to="/conta">Ver meus pedidos</Link></Button></Panel>;
-  }
-  if (order.paymentStatus === "cancelled" || order.paymentStatus === "refunded") {
-    return <Panel order={order}><p role="status" className="text-sm text-muted-foreground">Este pagamento foi encerrado. Faça um novo pedido.</p>
-      <Button variant="outline" className="label-caps" onClick={onBack}>Voltar</Button></Panel>;
-  }
-  if (!order.clientSecret) {
-    return <Panel order={order}><p className="text-sm text-muted-foreground">Carregando pagamento...</p></Panel>;
-  }
-  return (
-    <Panel order={order}>
-      <Elements stripe={stripePromise} options={{
-        clientSecret: order.clientSecret,
-        appearance: { theme: "night", variables: { borderRadius: "0px", fontFamily: "inherit" } },
-      }}>
+    body = <><p role="status" className="text-sm">Pagamento aprovado. Seu pedido foi confirmado.</p>
+      <Button asChild className="label-caps"><Link to="/conta">Ver meus pedidos</Link></Button></>;
+  } else if (order.paymentStatus === "cancelled" || order.paymentStatus === "refunded") {
+    body = <><p role="status" className="text-sm text-muted-foreground">Este pagamento foi encerrado. Faça um novo pedido.</p>
+      <Button variant="outline" className="label-caps" onClick={onBack}>Voltar</Button></>;
+  } else if (!order.clientSecret || !appearance) {
+    body = <p className="text-sm text-muted-foreground">Carregando pagamento...</p>;
+  } else {
+    body = (
+      <Elements stripe={stripePromise} options={{ clientSecret: order.clientSecret, appearance }}>
         <PayForm orderId={order.id} rejected={order.paymentStatus === "rejected"} onBack={onBack}
           onConfirmed={() => setOrder((o) => ({ ...o }))} />
       </Elements>
-    </Panel>
-  );
-}
+    );
+  }
 
-function Panel({ order, children }: { order: StripeOrder; children: React.ReactNode }) {
   return (
-    <div className="max-w-2xl space-y-5 border border-border bg-card p-6">
-      <div className="flex justify-between text-sm"><span className="text-muted-foreground">{order.orderNumber}</span>
-        <strong>{formatCurrency(order.total)}</strong></div>
-      {children}
+    <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+      <div className="order-2 space-y-6 border border-border bg-card p-6 sm:p-8 lg:order-1">
+        <div className="flex items-baseline justify-between border-b border-border pb-4">
+          <div>
+            <p className="label-caps text-xs text-muted-foreground">Pedido</p>
+            <p className="text-lg">{order.orderNumber}</p>
+          </div>
+          <div className="text-right">
+            <p className="label-caps text-xs text-muted-foreground">Total</p>
+            <p className="text-lg font-semibold">{formatCurrency(order.total)}</p>
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground">Cartão de crédito ou débito — a função é escolhida pelo próprio cartão informado.</p>
+        {body}
+      </div>
+      <div className="order-1 lg:order-2">
+        {summary && summary.items.length ? <OrderSummary data={summary} total={order.total} /> : null}
+      </div>
     </div>
   );
 }
+
 
 function PayForm({ orderId, rejected, onBack, onConfirmed }: { orderId: string; rejected: boolean; onBack: () => void; onConfirmed: () => void }) {
   const stripe = useStripe();

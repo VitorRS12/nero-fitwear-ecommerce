@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { getStripeOrder, startStripeCheckout, type StripeOrder } from "@/lib/checkout.functions";
 import { formatCurrency } from "@/lib/format";
 import { useCart } from "@/providers/cart-provider";
-import { availableShipping, checkoutTotal } from "@/services/checkout.service";
+import { availableShipping, checkoutTotal, PICKUP_ADDRESS } from "@/services/checkout.service";
 
 const PENDING_KEY = "nero.stripe.pendingOrder";
 
@@ -67,6 +67,7 @@ function CheckoutPage() {
   const onBack = useCallback(() => { window.localStorage.removeItem(PENDING_KEY); setOrder(null); setCheckoutKey(null); }, []);
 
   const selectedShipping = shippingOptions.find((option) => option.id === shippingMethod);
+  const isPickup = shippingMethod === "pickup";
   const previewTotal = checkoutTotal(totals.subtotal, totals.discount, selectedShipping?.price ?? 0);
 
   const updateCustomer = (field: keyof typeof customer, value: string) =>
@@ -85,8 +86,8 @@ function CheckoutPage() {
       const key = checkoutKey ?? crypto.randomUUID();
       setCheckoutKey(key);
       const created = await start({ data: {
-        customer, address,
-        shippingMethod: shippingMethod as "standard" | "express",
+        customer, address: isPickup ? PICKUP_ADDRESS : address,
+        shippingMethod: shippingMethod as "standard" | "express" | "pickup",
         checkoutKey: key,
         couponCode: coupon?.code ?? "",
         items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
@@ -101,8 +102,14 @@ function CheckoutPage() {
   };
 
   if (order) {
+    const hasAddress = isPickup || Boolean(address.street);
+    const summaryAddress = isPickup ? PICKUP_ADDRESS : address;
     return <StoreLayout><Section eyebrow="Pagamento" title="Finalizar pagamento">
-      <StripeCheckout initialOrder={order} onPaid={onPaid} onBack={onBack} />
+      <StripeCheckout initialOrder={order} onPaid={onPaid} onBack={onBack} summary={{
+        items, subtotal: totals.subtotal, discount: totals.discount,
+        shipping: selectedShipping?.price ?? 0, shippingLabel: selectedShipping?.label,
+        address: hasAddress ? summaryAddress : undefined,
+      }} />
     </Section></StoreLayout>;
   }
 
@@ -131,6 +138,23 @@ function CheckoutPage() {
               </div>
             </fieldset>
 
+            <ChoiceGroup title="Entrega" value={shippingMethod} onValueChange={setShippingMethod}>
+              {shippingOptions.map((option) => (
+                <Choice key={option.id} id={`shipping-${option.id}`} value={option.id}
+                  label={option.id === "pickup" ? option.label : `${option.label} · ${option.etaDays} dias úteis`}
+                  detail={option.price === 0 ? "Grátis" : formatCurrency(option.price)} />
+              ))}
+              {shippingOptions.length === 1 ? <p className="text-sm text-muted-foreground">Informe a UF do endereço para ver as opções de entrega.</p> : null}
+            </ChoiceGroup>
+
+            {isPickup ? (
+              <div className="border border-border bg-card p-5 text-sm" aria-live="polite">
+                <p className="label-caps mb-2 text-xs text-muted-foreground">Endereço de retirada</p>
+                <p className="font-medium">{PICKUP_ADDRESS.street}, {PICKUP_ADDRESS.number} — {PICKUP_ADDRESS.complement}</p>
+                <p className="text-muted-foreground">{PICKUP_ADDRESS.neighborhood} · {PICKUP_ADDRESS.city}/{PICKUP_ADDRESS.state} · CEP {PICKUP_ADDRESS.zipCode}</p>
+                <p className="mt-2 text-muted-foreground">Avisaremos quando o pedido estiver pronto para retirada.</p>
+              </div>
+            ) : (
             <fieldset className="space-y-4">
               <legend className="mb-4 text-2xl">Endereço de entrega</legend>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -143,12 +167,7 @@ function CheckoutPage() {
                 <Field id="complement" label="Complemento (opcional)" value={address.complement} onChange={(value) => updateAddress("complement", value)} required={false} />
               </div>
             </fieldset>
-
-            <ChoiceGroup title="Entrega" value={shippingMethod} onValueChange={setShippingMethod}>
-              {shippingOptions.length ? shippingOptions.map((option) => (
-                <Choice key={option.id} id={`shipping-${option.id}`} value={option.id} label={`${option.label} · ${option.etaDays} dias úteis`} detail={option.price === 0 ? "Grátis" : formatCurrency(option.price)} />
-              )) : <p className="text-sm text-muted-foreground">Informe a UF para ver as opções de entrega.</p>}
-            </ChoiceGroup>
+            )}
 
           </div>
 

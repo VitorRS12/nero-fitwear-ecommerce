@@ -6,33 +6,11 @@ import type { ShippingOption } from "@/types/cart";
  * Envio não afete a interface.
  */
 const REGION_BY_STATE: Record<string, "N" | "NE" | "CO" | "SE" | "S"> = {
-  AC: "N",
-  AP: "N",
-  AM: "N",
-  PA: "N",
-  RO: "N",
-  RR: "N",
-  TO: "N",
-  AL: "NE",
-  BA: "NE",
-  CE: "NE",
-  MA: "NE",
-  PB: "NE",
-  PE: "NE",
-  PI: "NE",
-  RN: "NE",
-  SE: "NE",
-  DF: "CO",
-  GO: "CO",
-  MT: "CO",
-  MS: "CO",
-  ES: "SE",
-  MG: "SE",
-  RJ: "SE",
-  SP: "SE",
-  PR: "S",
-  RS: "S",
-  SC: "S",
+  AC: "N", AP: "N", AM: "N", PA: "N", RO: "N", RR: "N", TO: "N",
+  AL: "NE", BA: "NE", CE: "NE", MA: "NE", PB: "NE", PE: "NE", PI: "NE", RN: "NE", SE: "NE",
+  DF: "CO", GO: "CO", MT: "CO", MS: "CO",
+  ES: "SE", MG: "SE", RJ: "SE", SP: "SE",
+  PR: "S", RS: "S", SC: "S",
 };
 
 const TABLE: Record<string, { standard: [number, number]; express: [number, number] }> = {
@@ -44,6 +22,8 @@ const TABLE: Record<string, { standard: [number, number]; express: [number, numb
 };
 
 export const FREE_SHIPPING_THRESHOLD = 399;
+
+export const PICKUP_OPTION: ShippingOption = { id: "pickup", label: "Retirar no local", price: 0, etaDays: 0 };
 
 export function getShippingOptions(state: string, subtotal: number): ShippingOption[] {
   const region = REGION_BY_STATE[state?.toUpperCase()] ?? "SE";
@@ -57,11 +37,6 @@ export function getShippingOptions(state: string, subtotal: number): ShippingOpt
       price: freeShipping ? 0 : config.standard[0],
       etaDays: config.standard[1],
     },
-    {
-      id: "express",
-      label: "Entrega expressa",
-      price: config.express[0],
-      etaDays: config.express[1],
-    },
+    { id: "express", label: "Entrega expressa", price: config.express[0], etaDays: config.express[1] },
   ];
 }

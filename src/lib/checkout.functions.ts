@@ -19,7 +19,7 @@ export const checkoutSchema = z.object({
     number: z.string().trim().min(1).max(30),
     complement: z.string().trim().max(120).optional().default(""),
   }),
-  shippingMethod: z.enum(["standard", "express"]),
+  shippingMethod: z.enum(["standard", "express", "pickup"]),
   checkoutKey: z.string().uuid(),
   couponCode: z.string().trim().max(40).optional().default(""),
   items: z
