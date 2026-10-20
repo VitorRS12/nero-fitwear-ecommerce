@@ -80,7 +80,7 @@ export function Footer({ categories }: FooterProps) {
         <div className="space-y-3">
           <h2 className="label-caps text-accent">Pagamento</h2>
           <p className="text-sm text-muted-foreground">
-            PIX e cartão de crédito em até 12x, processados com segurança pelo Mercado Pago.
+            PIX, cartão de crédito e débito, processados com segurança pelo Stripe.
           </p>
         </div>
       </div>

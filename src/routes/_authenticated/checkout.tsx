@@ -1,28 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
-import { CardCheckout } from "@/components/forms/CardCheckout";
-import { prepareCardOrder } from "@/lib/card-checkout.functions";
-import type { CardOrder } from "@/types/card-payment";
 
+import { StripeCheckout } from "@/components/forms/StripeCheckout";
 import { Section } from "@/components/blocks/Section";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { createPendingOrder, getPixOrder, type PixOrderResult } from "@/lib/checkout.functions";
+import { getStripeOrder, startStripeCheckout, type StripeOrder } from "@/lib/checkout.functions";
 import { formatCurrency } from "@/lib/format";
 import { useCart } from "@/providers/cart-provider";
 import { availableShipping, checkoutTotal } from "@/services/checkout.service";
+
+const PENDING_KEY = "nero.stripe.pendingOrder";
 
 export const Route = createFileRoute("/_authenticated/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout — NERO Fitwear" },
-      { name: "description", content: "Finalize seu pedido com PIX, cartão de crédito ou débito pelo Mercado Pago." },
+      { name: "description", content: "Finalize seu pedido com PIX, cartão de crédito ou débito, direto na loja." },
       { property: "og:title", content: "Checkout — NERO Fitwear" },
       { property: "og:description", content: "Finalize seu pedido com segurança." },
       { property: "og:type", content: "website" },
@@ -37,13 +36,9 @@ export const Route = createFileRoute("/_authenticated/checkout")({
 
 function CheckoutPage() {
   const { items, coupon, totals, clear } = useCart();
-  const createOrder = useServerFn(createPendingOrder);
-  const prepareCard = useServerFn(prepareCardOrder);
-  const [paymentMethod, setPaymentMethod] = useState<"pix" | "card">("pix");
-  const [cardOrder, setCardOrder] = useState<CardOrder | null>(null);
-  const fetchOrder = useServerFn(getPixOrder);
+  const start = useServerFn(startStripeCheckout);
+  const fetchOrder = useServerFn(getStripeOrder);
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "" });
-  const [cpf, setCpf] = useState("");
   const [address, setAddress] = useState({
     zipCode: "", state: "", city: "", neighborhood: "", street: "", number: "", complement: "",
   });
@@ -53,36 +48,24 @@ function CheckoutPage() {
   );
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [submitting, setSubmitting] = useState(false);
-  const [order, setOrder] = useState<PixOrderResult | null>(null);
+  const [order, setOrder] = useState<StripeOrder | null>(null);
   const [checkoutKey, setCheckoutKey] = useState<string | null>(null);
-  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+
   useEffect(() => {
-    const stored = window.localStorage.getItem("nero.pix.pendingOrder");
-    if (stored) setPendingOrderId(stored);
-    const cardId = window.localStorage.getItem("nero.card.pendingOrder");
-    if (cardId) setCardOrder({ id: cardId, orderNumber: "Pedido", total: 0, paymentStatus: "pending", paymentId: null, statusDetail: "processing", challenge: null });
-  }, []);
-  useEffect(() => {
-    if (!pendingOrderId) return;
-    let cancelled = false;
-    const refresh = async () => {
-      try {
-        const result = await fetchOrder({ data: { orderId: pendingOrderId } });
-        if (cancelled) return;
-        setOrder(result as PixOrderResult);
-        if (result.paymentStatus !== "pending") {
-          window.localStorage.removeItem("nero.pix.pendingOrder");
-          setPendingOrderId(null);
-          setCheckoutKey(null);
-        }
-      } catch {
-        // Keep the pending order available when the session or network temporarily fails.
-      }
-    };
-    void refresh();
-    const interval = window.setInterval(() => void refresh(), 15000);
-    return () => { cancelled = true; window.clearInterval(interval); };
-  }, [fetchOrder, pendingOrderId]);
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("pedido") ?? window.localStorage.getItem(PENDING_KEY);
+    if (!id) return;
+    fetchOrder({ data: { orderId: id } })
+      .then((result) => {
+        if (result.paymentStatus === "pending" || result.paymentStatus === "rejected" || params.get("pedido")) setOrder(result);
+        else window.localStorage.removeItem(PENDING_KEY);
+      })
+      .catch(() => window.localStorage.removeItem(PENDING_KEY));
+  }, [fetchOrder]);
+
+  const onPaid = useCallback(() => { clear(); window.localStorage.removeItem(PENDING_KEY); }, [clear]);
+  const onBack = useCallback(() => { window.localStorage.removeItem(PENDING_KEY); setOrder(null); setCheckoutKey(null); }, []);
+
   const selectedShipping = shippingOptions.find((option) => option.id === shippingMethod);
   const previewTotal = checkoutTotal(totals.subtotal, totals.discount, selectedShipping?.price ?? 0);
 
@@ -101,32 +84,15 @@ function CheckoutPage() {
     try {
       const key = checkoutKey ?? crypto.randomUUID();
       setCheckoutKey(key);
-      if (paymentMethod === "card") {
-        const prepared = await prepareCard({ data: { customer, address,
-          shippingMethod: shippingMethod as "standard" | "express", checkoutKey: key,
-          couponCode: coupon?.code ?? "", items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
-        } });
-        window.localStorage.setItem("nero.card.pendingOrder", prepared.id);
-        setCardOrder(prepared);
-        return;
-      }
-      const created = await createOrder({
-        data: {
-          customer,
-          address,
-          shippingMethod: shippingMethod as "standard" | "express",
-          paymentMethod: "pix",
-          cpf: cpf.replace(/\D/g, ""),
-          checkoutKey: key,
-          couponCode: coupon?.code ?? "",
-          items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
-        },
-      });
+      const created = await start({ data: {
+        customer, address,
+        shippingMethod: shippingMethod as "standard" | "express",
+        checkoutKey: key,
+        couponCode: coupon?.code ?? "",
+        items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+      } });
+      window.localStorage.setItem(PENDING_KEY, created.id);
       setOrder(created);
-      window.localStorage.setItem("nero.pix.pendingOrder", created.id);
-      setPendingOrderId(created.id);
-      clear();
-      toast.success("PIX gerado.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível criar o pedido.");
     } finally {
@@ -134,49 +100,12 @@ function CheckoutPage() {
     }
   };
 
-  if (cardOrder) {
-    return <StoreLayout><Section eyebrow="Pagamento com cartão" title="Finalizar pagamento">
-      <CardCheckout initialOrder={cardOrder} email={customer.email} cpf={cpf}
-        onPaid={() => { clear(); window.localStorage.removeItem("nero.card.pendingOrder"); }}
-        onBack={() => { window.localStorage.removeItem("nero.card.pendingOrder"); setCardOrder(null); setCheckoutKey(null); }} />
+  if (order) {
+    return <StoreLayout><Section eyebrow="Pagamento" title="Finalizar pagamento">
+      <StripeCheckout initialOrder={order} onPaid={onPaid} onBack={onBack} />
     </Section></StoreLayout>;
   }
 
-  if (order) {
-    return (
-      <StoreLayout>
-        <Section eyebrow="Pagamento PIX" title={order.orderNumber}>
-          <div className="max-w-2xl space-y-5 border border-border bg-card p-6">
-            <p className="text-sm text-muted-foreground" role="status">
-              {order.paymentStatus === "approved" ? "Pagamento aprovado. Seu pedido foi confirmado." :
-                order.paymentStatus === "pending" ? "Aguardando pagamento. Suas peças estão reservadas até o horário indicado." :
-                "Pagamento encerrado. Se quiser, faça um novo pedido."}
-            </p>
-            {order.paymentStatus === "pending" && !order.pixCopyPaste ? <p className="text-sm text-muted-foreground">O código PIX ainda não está disponível. Atualize esta página em alguns instantes.</p> : null}
-            {order.paymentStatus === "pending" && order.pixCopyPaste ? <>
-              {order.pixQrCodeBase64 ? <img
-                src={`data:image/png;base64,${order.pixQrCodeBase64}`}
-                alt="QR Code para pagamento PIX"
-                width={240} height={240}
-                className="mx-auto aspect-square w-60 bg-primary p-2"
-              /> : null}
-              <p className="text-sm text-muted-foreground">Válido até {new Date(order.paymentExpiresAt).toLocaleString("pt-BR")}.</p>
-              <div className="space-y-2"><Label htmlFor="pix-code">PIX copia e cola</Label>
-                <div className="flex gap-2"><Input id="pix-code" readOnly value={order.pixCopyPaste} className="min-w-0" />
-                  <Button type="button" size="icon" aria-label="Copiar código PIX" title="Copiar código PIX" onClick={() => {
-                    void navigator.clipboard.writeText(order.pixCopyPaste).then(() => toast.success("Código PIX copiado.")).catch(() => toast.error("Não foi possível copiar o código."));
-                  }}><Copy /></Button></div>
-              </div>
-            </> : null}
-            <div className="flex justify-between border-t border-border pt-4 text-lg font-semibold">
-              <span>Total</span><span>{formatCurrency(order.total)}</span>
-            </div>
-            <Button asChild variant="outline" className="label-caps"><Link to="/catalogo">Voltar ao catálogo</Link></Button>
-          </div>
-        </Section>
-      </StoreLayout>
-    );
-  }
 
   if (items.length === 0) {
     return (
@@ -199,7 +128,6 @@ function CheckoutPage() {
                 <Field id="name" label="Nome completo" value={customer.name} onChange={(value) => updateCustomer("name", value)} autoComplete="name" />
                 <Field id="email" label="E-mail" type="email" value={customer.email} onChange={(value) => updateCustomer("email", value)} autoComplete="email" />
                 <Field id="phone" label="Telefone" value={customer.phone} onChange={(value) => updateCustomer("phone", value)} autoComplete="tel" />
-                <Field id="cpf" label="CPF para pagamento" value={cpf} onChange={(value) => setCpf(value.replace(/\D/g, "").slice(0, 11))} inputMode="numeric" pattern="[0-9]{11}" maxLength={11} autoComplete="off" />
               </div>
             </fieldset>
 
@@ -222,10 +150,6 @@ function CheckoutPage() {
               )) : <p className="text-sm text-muted-foreground">Informe a UF para ver as opções de entrega.</p>}
             </ChoiceGroup>
 
-            <ChoiceGroup title="Pagamento" value={paymentMethod} onValueChange={(value) => { setPaymentMethod(value as "pix" | "card"); setCheckoutKey(null); }}>
-              <Choice id="payment-pix" value="pix" label="PIX" detail="QR Code ou copia e cola" />
-              <Choice id="payment-card" value="card" label="Crédito ou débito" detail="Parcelas conforme Mercado Pago" />
-            </ChoiceGroup>
           </div>
 
           <aside className="h-fit space-y-4 border border-border bg-card p-6 lg:sticky lg:top-24">
@@ -237,9 +161,9 @@ function CheckoutPage() {
               <div className="flex justify-between border-t border-border pt-3 text-base font-semibold"><dt>Total</dt><dd>{formatCurrency(previewTotal)}</dd></div>
             </dl>
             <Button type="submit" size="lg" className="label-caps w-full" disabled={submitting || !selectedShipping}>
-              {submitting ? "Preparando pagamento..." : paymentMethod === "pix" ? "Gerar PIX" : "Continuar para cartão"}
+              {submitting ? "Preparando pagamento..." : "Continuar para pagamento"}
             </Button>
-            <p className="text-xs text-muted-foreground">O pedido é confirmado após o Mercado Pago aprovar o pagamento.</p>
+            <p className="text-xs text-muted-foreground">PIX, crédito ou débito na próxima etapa, sem sair da loja.</p>
           </aside>
         </form>
       </Section>

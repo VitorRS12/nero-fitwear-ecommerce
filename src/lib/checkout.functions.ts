@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { OrderPaymentStatus } from "@/lib/stripe-status";
 
 export const checkoutSchema = z.object({
   customer: z.object({
@@ -11,11 +12,7 @@ export const checkoutSchema = z.object({
   }),
   address: z.object({
     zipCode: z.string().trim().min(8).max(10),
-    state: z
-      .string()
-      .trim()
-      .length(2)
-      .transform((value) => value.toUpperCase()),
+    state: z.string().trim().length(2).transform((value) => value.toUpperCase()),
     city: z.string().trim().min(2).max(120),
     neighborhood: z.string().trim().min(2).max(120),
     street: z.string().trim().min(2).max(160),
@@ -23,8 +20,6 @@ export const checkoutSchema = z.object({
     complement: z.string().trim().max(120).optional().default(""),
   }),
   shippingMethod: z.enum(["standard", "express"]),
-  paymentMethod: z.enum(["pix", "card"]),
-  cpf: z.string().regex(/^\d{11}$/, "Informe um CPF válido com 11 dígitos."),
   checkoutKey: z.string().uuid(),
   couponCode: z.string().trim().max(40).optional().default(""),
   items: z
@@ -33,219 +28,132 @@ export const checkoutSchema = z.object({
     .max(50),
 });
 
-export interface PendingOrderResult {
+export interface StripeOrder {
   id: string;
   orderNumber: string;
-  subtotal: number;
-  discount: number;
-  shipping: number;
   total: number;
-  paymentStatus: "pending" | "approved" | "rejected" | "cancelled" | "refunded";
+  paymentStatus: OrderPaymentStatus;
+  clientSecret: string | null;
+  publishableKey: string;
+}
+
+interface PendingOrderRow {
+  id: string;
+  orderNumber: string;
+  total: number;
+  paymentStatus: OrderPaymentStatus;
   paymentExpiresAt: string;
 }
 
-export interface PixOrderResult extends PendingOrderResult {
-  pixCopyPaste: string;
-  pixQrCodeBase64: string;
-  ticketUrl: string;
-  paymentStatus: "pending" | "approved" | "rejected" | "cancelled" | "refunded";
+function publishableKey() {
+  const key = process.env["STRIPE_PUBLISHABLE_KEY"];
+  if (!key || !/^pk_(test|live)_/.test(key)) throw new Error("O pagamento ainda não foi configurado na loja.");
+  return key;
 }
 
-const orderIdSchema = z.object({ orderId: z.string().uuid() });
-
-export const getPixOrder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => orderIdSchema.parse(input))
-  .handler(async ({ data, context }) => {
-    const { data: order, error } = await context.supabase
-      .from("orders")
-      .select("id, order_number, subtotal, discount, shipping_cost, total, payment_status, payment_expires_at")
-      .eq("id", data.orderId)
-      .eq("user_id", context.userId)
-      .single();
-    if (error || !order) throw new Error("Pedido não encontrado.");
-    const { data: payments } = await context.supabase
-      .from("payments")
-      .select("pix_copy_paste, pix_qr_code_base64, ticket_url, provider_payment_id")
-      .eq("order_id", order.id)
-      .eq("provider", "mercadopago")
-      .limit(1);
-    const payment = payments?.[0];
-    let paymentStatus = order.payment_status;
-    if (order.payment_status === "pending" && payment?.provider_payment_id) {
-      try {
-        const { getMercadoPagoPayment, paymentSnapshot } = await import("@/lib/mercado-pago.server");
-        const livePayment = await getMercadoPagoPayment(payment.provider_payment_id);
-        if (livePayment.external_reference === order.id && livePayment.payment_method_id === "pix") {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { error: updateError } = await supabaseAdmin.rpc("apply_mercado_pago_payment", {
-            _order_id: order.id,
-            _provider_payment_id: String(livePayment.id),
-            _provider_status: livePayment.status,
-            _amount: livePayment.transaction_amount,
-            _raw_payload: paymentSnapshot(livePayment),
-          });
-          if (updateError) console.error("[pix] status reconciliation failed", updateError);
-          else {
-            const { data: updated } = await context.supabase
-              .from("orders")
-              .select("payment_status")
-              .eq("id", order.id)
-              .eq("user_id", context.userId)
-              .single();
-            paymentStatus = updated?.payment_status ?? paymentStatus;
-          }
-        }
-      } catch (error) {
-        console.error("[pix] status lookup failed", error);
-      }
-    }
-    return {
-      id: order.id,
-      orderNumber: order.order_number,
-      subtotal: order.subtotal,
-      discount: order.discount,
-      shipping: order.shipping_cost,
-      total: order.total,
-      paymentStatus,
-      paymentExpiresAt: order.payment_expires_at,
-      pixCopyPaste: payment?.pix_copy_paste ?? "",
-      pixQrCodeBase64: payment?.pix_qr_code_base64 ?? "",
-      ticketUrl: payment?.ticket_url ?? "",
-    };
-  });
-
-export const createPendingOrder = createServerFn({ method: "POST" })
+/** Cria (ou reaproveita) o pedido e o PaymentIntent do Stripe. O valor vem sempre do banco. */
+export const startStripeCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => checkoutSchema.parse(input))
-  .handler(async ({ data, context }) => {
-    if (data.paymentMethod !== "pix") throw new Error("Nesta etapa, escolha PIX.");
-    const token = process.env["MERCADO_PAGO_ACCESS_TOKEN"];
-    if (!token || !/^(APP_USR|TEST)-/.test(token))
-      throw new Error("O PIX ainda não foi configurado na loja.");
+  .handler(async ({ data, context }): Promise<StripeOrder> => {
+    const pk = publishableKey();
+    const { getStripe, releaseExpiredStripeOrders } = await import("@/lib/stripe.server");
+    const { toCents } = await import("@/lib/stripe-status");
+    const stripe = getStripe();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    try {
-      const { releaseExpiredPixOrders } = await import("@/lib/pix-expiration.server");
-      await releaseExpiredPixOrders(20);
-    } catch (releaseError) {
-      console.error("[checkout] expired reservation cleanup failed", releaseError);
-    }
-    const { data: order, error } = await supabaseAdmin.rpc("create_pending_order", {
+    try { await releaseExpiredStripeOrders(10); } catch (e) { console.error("[checkout] cleanup failed", e instanceof Error ? e.message : e); }
+
+    const { data: created, error } = await supabaseAdmin.rpc("create_pending_order", {
       _user_id: context.userId,
       _customer_name: data.customer.name,
       _customer_email: data.customer.email,
       _customer_phone: data.customer.phone,
       _shipping_address: data.address,
       _shipping_method: data.shippingMethod,
-      _payment_method: data.paymentMethod,
+      _payment_method: "card",
       _coupon_code: data.couponCode,
       _items: data.items,
       _checkout_key: data.checkoutKey,
     });
-
     if (error) {
       console.error("[checkout] create_pending_order failed", error.message);
       if (error.message.startsWith("Estoque insuficiente"))
         throw new Error(`${error.message} Ajuste a quantidade na sacola ou escolha outro tamanho.`);
+      if (error.message.includes("não está mais disponível")) throw new Error(error.message);
       throw new Error("Não foi possível criar o pedido. Confira os dados e tente novamente.");
     }
+    const order = created as unknown as PendingOrderRow;
+    if (order.paymentStatus !== "pending")
+      throw new Error("Este pedido já foi encerrado. Volte à sacola e inicie uma nova compra.");
 
-    const pendingOrder = order as unknown as PendingOrderResult;
-    const { data: existingPayment } = await supabaseAdmin
-      .from("payments")
-      .select("id, provider_payment_id, pix_copy_paste, pix_qr_code_base64, ticket_url")
-      .eq("order_id", pendingOrder.id)
-      .eq("provider", "mercadopago")
-      .maybeSingle();
-    if (pendingOrder.paymentStatus !== "pending") {
-      throw new Error("Este pedido já foi encerrado. Consulte o histórico ou inicie uma nova compra.");
-    }
-    if (existingPayment?.pix_copy_paste) {
-      return {
-        ...pendingOrder,
-        pixCopyPaste: existingPayment.pix_copy_paste,
-        pixQrCodeBase64: existingPayment.pix_qr_code_base64 ?? "",
-        ticketUrl: existingPayment.ticket_url ?? "",
-      } satisfies PixOrderResult;
+    const { data: existing } = await supabaseAdmin
+      .from("payments").select("provider_payment_id")
+      .eq("order_id", order.id).eq("provider", "stripe")
+      .order("created_at", { ascending: false }).limit(1);
+    const existingId = existing?.[0]?.provider_payment_id;
+    if (existingId) {
+      const pi = await stripe.paymentIntents.retrieve(existingId);
+      if (pi.status !== "canceled" && pi.status !== "succeeded")
+        return { id: order.id, orderNumber: order.orderNumber, total: order.total, paymentStatus: "pending", clientSecret: pi.client_secret, publishableKey: pk };
     }
 
-    if (Date.parse(pendingOrder.paymentExpiresAt) - Date.now() < 60_000)
-      throw new Error("O prazo deste pedido terminou. Volte à sacola e finalize uma nova compra.");
-
-    // Nunca devolva o CPF nem a resposta bruta do provedor ao navegador.
-    const { createPixPayment, findMercadoPagoPaymentsByReference, MercadoPagoError, pixInstructions, paymentSnapshot } =
-      await import("@/lib/mercado-pago.server");
-    // Recupera um PIX criado no provedor cujo registro local não foi salvo, evitando cobrança duplicada.
-    const remote = (await findMercadoPagoPaymentsByReference(pendingOrder.id)).find(
-      (entry) => entry.payment_method_id === "pix" && entry.status === "pending" && pixInstructions(entry).copyPaste,
-    );
-    // Cada tentativa usa uma chave nova: o Mercado Pago repete a mesma resposta (inclusive erros 400)
-    // para uma chave já usada, o que travava pedidos com a chave fixa no ID do pedido.
-    const attemptKey = crypto.randomUUID();
-    const words = data.customer.name.trim().split(/\s+/);
-    let payment;
+    const base = {
+      amount: toCents(order.total),
+      currency: "brl",
+      automatic_payment_methods: { enabled: true },
+      receipt_email: data.customer.email,
+      description: `Pedido ${order.orderNumber} — NERO Fitwear`,
+      metadata: { order_id: order.id, order_number: order.orderNumber },
+    };
+    let pi;
     try {
-      payment = remote ?? await createPixPayment({
-        orderId: pendingOrder.id,
-        orderNumber: pendingOrder.orderNumber,
-        amount: pendingOrder.total,
-        email: data.customer.email,
-        firstName: words[0] ?? data.customer.name,
-        lastName: words.slice(1).join(" ") || words[0] || data.customer.name,
-        cpf: data.cpf,
-        expiresAt: pendingOrder.paymentExpiresAt,
-        idempotencyKey: attemptKey,
-      });
-    } catch (providerError) {
-      if (providerError instanceof MercadoPagoError && providerError.definitelyNotCreated)
-        throw new Error("O Mercado Pago recusou os dados do PIX. Confira CPF, nome e e-mail e tente novamente.");
-      throw providerError;
+      pi = await stripe.paymentIntents.create(
+        { ...base, payment_method_options: { pix: { expires_after_seconds: 1800 } } },
+        { idempotencyKey: `nero-order-${order.id}` },
+      );
+    } catch (err) {
+      // Conta sem PIX liberado: segue só com cartão.
+      console.error("[stripe] create with pix options failed", err instanceof Error ? err.message : err);
+      pi = await stripe.paymentIntents.create(base, { idempotencyKey: `nero-order-${order.id}-card` });
     }
-    if (
-      payment.external_reference !== pendingOrder.id ||
-      Math.abs(Number(payment.transaction_amount) - Number(pendingOrder.total)) > 0.009
-    ) {
-      throw new Error("A cobrança não corresponde ao pedido. Entre em contato com a loja.");
-    }
-    const instructions = pixInstructions(payment);
-    if (!instructions.copyPaste)
-      throw new Error("PIX criado, mas o código ainda não está disponível. Consulte seu pedido novamente.");
     const { error: saveError } = await supabaseAdmin.from("payments").insert({
-      order_id: pendingOrder.id,
-      provider: "mercadopago",
-      provider_payment_id: String(payment.id),
-      method: "pix",
-      amount: pendingOrder.total,
-      status: "pending",
-      idempotency_key: attemptKey,
-      pix_copy_paste: instructions.copyPaste,
-      pix_qr_code_base64: instructions.qrCodeBase64,
-      ticket_url: instructions.ticketUrl,
-      expires_at: pendingOrder.paymentExpiresAt,
-      raw_payload: paymentSnapshot(payment),
+      order_id: order.id, provider: "stripe", provider_payment_id: pi.id,
+      status: "pending", amount: order.total, expires_at: order.paymentExpiresAt,
     });
-    if (saveError) {
-      const { data: saved } = await supabaseAdmin
-        .from("payments")
-        .select("provider_payment_id, pix_copy_paste, pix_qr_code_base64, ticket_url")
-        .eq("order_id", pendingOrder.id)
-        .eq("provider", "mercadopago")
-        .maybeSingle();
-      if (saved?.provider_payment_id === String(payment.id) && saved.pix_copy_paste) {
-        return {
-          ...pendingOrder,
-          pixCopyPaste: saved.pix_copy_paste,
-          pixQrCodeBase64: saved.pix_qr_code_base64 ?? "",
-          ticketUrl: saved.ticket_url ?? "",
-        } satisfies PixOrderResult;
+    if (saveError && !saveError.message.includes("duplicate")) console.error("[stripe] payment save failed", saveError.message);
+    return { id: order.id, orderNumber: order.orderNumber, total: order.total, paymentStatus: "pending", clientSecret: pi.client_secret, publishableKey: pk };
+  });
+
+/** Consulta o pedido e sincroniza com o Stripe (caso o webhook ainda não tenha chegado). */
+export const getStripeOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ orderId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<StripeOrder> => {
+    const pk = publishableKey();
+    const { data: order, error } = await context.supabase
+      .from("orders").select("id, order_number, total, payment_status")
+      .eq("id", data.orderId).eq("user_id", context.userId).single();
+    if (error || !order) throw new Error("Pedido não encontrado.");
+    let status = order.payment_status as OrderPaymentStatus;
+    let clientSecret: string | null = null;
+    const { data: payments } = await context.supabase
+      .from("payments").select("provider_payment_id")
+      .eq("order_id", order.id).eq("provider", "stripe")
+      .order("created_at", { ascending: false }).limit(1);
+    const piId = payments?.[0]?.provider_payment_id;
+    if (piId && status === "pending") {
+      try {
+        const { getStripe, applyPaymentIntent } = await import("@/lib/stripe.server");
+        const pi = await getStripe().paymentIntents.retrieve(piId, { expand: ["payment_method"] });
+        if (pi.metadata?.["order_id"] === order.id) {
+          await applyPaymentIntent(pi);
+          clientSecret = pi.status === "succeeded" || pi.status === "canceled" ? null : pi.client_secret;
+          const { data: updated } = await context.supabase.from("orders").select("payment_status").eq("id", order.id).single();
+          status = (updated?.payment_status as OrderPaymentStatus) ?? status;
+        }
+      } catch (e) {
+        console.error("[stripe] status lookup failed", e instanceof Error ? e.message : e);
       }
-      console.error("[pix] payment save failed", saveError);
-      throw new Error("PIX criado, mas não foi possível exibi-lo agora. Consulte seu pedido novamente.");
     }
-    return {
-      ...pendingOrder,
-      pixCopyPaste: instructions.copyPaste,
-      pixQrCodeBase64: instructions.qrCodeBase64,
-      ticketUrl: instructions.ticketUrl,
-    } satisfies PixOrderResult;
+    return { id: order.id, orderNumber: order.order_number, total: Number(order.total), paymentStatus: status, clientSecret, publishableKey: pk };
   });
