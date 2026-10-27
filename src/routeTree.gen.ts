@@ -28,6 +28,7 @@ import { Route as AuthenticatedAdminProdutosIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminProdutosIdRouteImport } from './routes/_authenticated/admin.produtos.$id'
 import { Route as AuthenticatedAdminProdutosNovoRouteImport } from './routes/_authenticated/admin.produtos.novo'
 import { Route as ApiPublicImgSplatRouteImport } from './routes/api/public/img/$'
+import { Route as ApiPublicMercadoPagoWebhookRouteImport } from './routes/api/public/mercado-pago/webhook'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -128,6 +129,12 @@ const ApiPublicImgSplatRoute = ApiPublicImgSplatRouteImport.update({
   path: '/api/public/img/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMercadoPagoWebhookRoute =
+  ApiPublicMercadoPagoWebhookRouteImport.update({
+    id: '/api/public/mercado-pago/webhook',
+    path: '/api/public/mercado-pago/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   id: '/api/public/stripe/webhook',
   path: '/api/public/stripe/webhook',
@@ -152,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/admin/produtos/novo': typeof AuthenticatedAdminProdutosNovoRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
+  '/api/public/mercado-pago/webhook': typeof ApiPublicMercadoPagoWebhookRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/produtos/': typeof AuthenticatedAdminProdutosIndexRoute
 }
@@ -172,6 +180,7 @@ export interface FileRoutesByTo {
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/admin/produtos/novo': typeof AuthenticatedAdminProdutosNovoRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
+  '/api/public/mercado-pago/webhook': typeof ApiPublicMercadoPagoWebhookRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosIndexRoute
 }
@@ -195,6 +204,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/_authenticated/admin/produtos/novo': typeof AuthenticatedAdminProdutosNovoRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
+  '/api/public/mercado-pago/webhook': typeof ApiPublicMercadoPagoWebhookRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/admin/produtos/': typeof AuthenticatedAdminProdutosIndexRoute
 }
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/$id'
     | '/admin/produtos/novo'
     | '/api/public/img/$'
+    | '/api/public/mercado-pago/webhook'
     | '/api/public/stripe/webhook'
     | '/admin/produtos/'
   fileRoutesByTo: FileRoutesByTo
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/$id'
     | '/admin/produtos/novo'
     | '/api/public/img/$'
+    | '/api/public/mercado-pago/webhook'
     | '/api/public/stripe/webhook'
     | '/admin/produtos'
   id:
@@ -260,6 +272,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/produtos/$id'
     | '/_authenticated/admin/produtos/novo'
     | '/api/public/img/$'
+    | '/api/public/mercado-pago/webhook'
     | '/api/public/stripe/webhook'
     | '/_authenticated/admin/produtos/'
   fileRoutesById: FileRoutesById
@@ -276,6 +289,7 @@ export interface RootRouteChildren {
   TrocasRoute: typeof TrocasRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
+  ApiPublicMercadoPagoWebhookRoute: typeof ApiPublicMercadoPagoWebhookRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
 
@@ -414,6 +428,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImgSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mercado-pago/webhook': {
+      id: '/api/public/mercado-pago/webhook'
+      path: '/api/public/mercado-pago/webhook'
+      fullPath: '/api/public/mercado-pago/webhook'
+      preLoaderRoute: typeof ApiPublicMercadoPagoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/stripe/webhook': {
       id: '/api/public/stripe/webhook'
       path: '/api/public/stripe/webhook'
@@ -471,6 +492,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrocasRoute: TrocasRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
+  ApiPublicMercadoPagoWebhookRoute: ApiPublicMercadoPagoWebhookRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport

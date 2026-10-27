@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getStripeOrder, type StripeOrder } from "@/lib/checkout.functions";
 import { formatCurrency } from "@/lib/format";
+import { MercadoPagoCheckout } from "./MercadoPagoCheckout";
+import type { MercadoPagoResult } from "@/lib/mercado-pago.functions";
 import { OrderSummary, type SummaryData } from "./OrderSummary";
 import { storeAppearance } from "./stripe-appearance";
 
@@ -17,9 +19,11 @@ function getStripePromise(key: string) {
   return stripeCache.get(key)!;
 }
 
-export function StripeCheckout({ initialOrder, summary, onPaid, onBack }: {
-  initialOrder: StripeOrder; summary?: SummaryData | null; onPaid: () => void; onBack: () => void;
+export function StripeCheckout({ initialOrder, summary, onPaid, onBack, email = "" }: {
+  initialOrder: StripeOrder; summary?: SummaryData | null; onPaid: () => void; onBack: () => void; email?: string;
 }) {
+  const [provider, setProvider] = useState<"stripe" | "mercadopago">("mercadopago");
+  const [mpResult, setMpResult] = useState<MercadoPagoResult | null>(null);
   const fetchOrder = useServerFn(getStripeOrder);
   const [order, setOrder] = useState(initialOrder);
   const [appearance, setAppearance] = useState<ReturnType<typeof storeAppearance> | null>(null);
@@ -50,6 +54,11 @@ export function StripeCheckout({ initialOrder, summary, onPaid, onBack }: {
   } else if (order.paymentStatus === "cancelled" || order.paymentStatus === "refunded") {
     body = <><p role="status" className="text-sm text-muted-foreground">Este pagamento foi encerrado. Faça um novo pedido.</p>
       <Button variant="outline" className="label-caps" onClick={onBack}>Voltar</Button></>;
+  } else if (provider === "mercadopago") {
+    body = mpResult ? <MercadoPagoStatus result={mpResult} onRetry={() => setMpResult(null)} /> : (
+      <MercadoPagoCheckout orderId={order.id} amount={order.total} email={email}
+        onResult={(r) => { setMpResult(r); if (r.status === "approved") { toast.success("Pagamento aprovado."); setOrder((o) => ({ ...o, paymentStatus: "approved" })); onPaid(); } }} />
+    );
   } else if (!order.clientSecret || !appearance) {
     body = <p className="text-sm text-muted-foreground">Carregando pagamento...</p>;
   } else {
@@ -74,7 +83,17 @@ export function StripeCheckout({ initialOrder, summary, onPaid, onBack }: {
             <p className="text-lg font-semibold">{formatCurrency(order.total)}</p>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">Cartão de crédito ou débito — a função é escolhida pelo próprio cartão informado.</p>
+        {order.paymentStatus === "pending" || order.paymentStatus === "rejected" ? (
+          <div role="tablist" aria-label="Processador de pagamento" className="grid grid-cols-2 border border-border">
+            {(["mercadopago", "stripe"] as const).map((id) => (
+              <button key={id} type="button" role="tab" aria-selected={provider === id}
+                onClick={() => { setProvider(id); setMpResult(null); }}
+                className={`label-caps px-4 py-3 text-xs transition-colors ${provider === id ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                {id === "mercadopago" ? "Mercado Pago" : "Stripe"}
+              </button>
+            ))}
+          </div>
+        ) : null}
         {body}
       </div>
       <div className="order-1 lg:order-2">
@@ -121,5 +140,28 @@ function PayForm({ orderId, rejected, onBack, onConfirmed }: { orderId: string; 
       </div>
       <p className="text-xs text-muted-foreground">Pagamento processado com segurança pelo Stripe. Os dados do cartão não passam pela loja.</p>
     </form>
+  );
+}
+
+function MercadoPagoStatus({ result, onRetry }: { result: MercadoPagoResult; onRetry: () => void }) {
+  if (result.status === "approved") return <p role="status" className="text-sm">Pagamento aprovado. Seu pedido foi confirmado.</p>;
+  if (result.pixQrCode) {
+    return (
+      <div className="space-y-4" aria-live="polite">
+        <p className="text-sm">Escaneie o QR Code ou copie o código PIX. A confirmação aparece aqui automaticamente.</p>
+        {result.pixQrCodeBase64 ? <img src={`data:image/png;base64,${result.pixQrCodeBase64}`} alt="QR Code PIX" className="h-56 w-56 border border-border bg-foreground p-2" /> : null}
+        <div className="flex gap-2">
+          <input readOnly value={result.pixQrCode} aria-label="Código PIX copia e cola" className="min-w-0 flex-1 border border-border bg-background px-3 py-2 font-mono text-xs" />
+          <Button type="button" variant="outline" onClick={() => { void navigator.clipboard.writeText(result.pixQrCode ?? ""); toast.success("Código PIX copiado."); }}>Copiar</Button>
+        </div>
+      </div>
+    );
+  }
+  const pending = result.status === "in_process" || result.status === "pending";
+  return (
+    <div role="alert" className="space-y-3 text-sm">
+      <p>{pending ? "Pagamento em análise. Avisaremos quando for confirmado." : "Pagamento recusado. Confira os dados ou tente outro cartão."}</p>
+      {!pending ? <Button variant="outline" className="label-caps" onClick={onRetry}>Tentar novamente</Button> : null}
+    </div>
   );
 }

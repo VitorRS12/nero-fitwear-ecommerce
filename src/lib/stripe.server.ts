@@ -74,9 +74,12 @@ export async function releaseExpiredStripeOrders(limit = 20) {
   for (const order of orders) {
     try {
       const { data: payments } = await supabaseAdmin
-        .from("payments").select("provider_payment_id")
-        .eq("order_id", order.id).eq("provider", "stripe");
-      const intentIds = (payments ?? []).map((p) => p.provider_payment_id).filter((id): id is string => !!id);
+        .from("payments").select("provider, provider_payment_id")
+        .eq("order_id", order.id);
+      // Falha de consulta ou outro provedor: não presumir ausência de cobrança.
+      // Mercado Pago será cancelado/consultado apenas por sua própria rotina.
+      if (!payments || payments.some((payment) => payment.provider !== "stripe")) continue;
+      const intentIds = payments.map((p) => p.provider_payment_id).filter((id): id is string => !!id);
       let paid = false;
       for (const id of intentIds) {
         let pi = await stripe.paymentIntents.retrieve(id);
