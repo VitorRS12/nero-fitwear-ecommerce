@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
+import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as EntregaRouteImport } from './routes/entrega'
@@ -23,6 +24,7 @@ import { Route as CatalogoCategoriaRouteImport } from './routes/catalogo.$catego
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
+import { Route as AuthenticatedAdminEstoqueRouteImport } from './routes/_authenticated/admin.estoque'
 import { Route as AuthenticatedAdminTelaInicialRouteImport } from './routes/_authenticated/admin.tela-inicial'
 import { Route as AuthenticatedAdminProdutosIndexRouteImport } from './routes/_authenticated/admin.produtos.index'
 import { Route as AuthenticatedAdminProdutosIdRouteImport } from './routes/_authenticated/admin.produtos.$id'
@@ -46,6 +48,11 @@ const AuthRoute = AuthRouteImport.update({
 const CarrinhoRoute = CarrinhoRouteImport.update({
   id: '/carrinho',
   path: '/carrinho',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogoRoute = CatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContaRoute = ContaRouteImport.update({
@@ -74,14 +81,14 @@ const AuthenticatedCheckoutRoute = AuthenticatedCheckoutRouteImport.update({
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const CatalogoIndexRoute = CatalogoIndexRouteImport.update({
-  id: '/catalogo/',
-  path: '/catalogo/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => CatalogoRoute,
 } as any)
 const CatalogoCategoriaRoute = CatalogoCategoriaRouteImport.update({
-  id: '/catalogo/$categoria',
-  path: '/catalogo/$categoria',
-  getParentRoute: () => rootRouteImport,
+  id: '/$categoria',
+  path: '/$categoria',
+  getParentRoute: () => CatalogoRoute,
 } as any)
 const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
   id: '/produto/$slug',
@@ -97,6 +104,12 @@ const AuthenticatedAdminCategoriasRoute =
   AuthenticatedAdminCategoriasRouteImport.update({
     id: '/admin/categorias',
     path: '/admin/categorias',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminEstoqueRoute =
+  AuthenticatedAdminEstoqueRouteImport.update({
+    id: '/admin/estoque',
+    path: '/admin/estoque',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminTelaInicialRoute =
@@ -133,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/carrinho': typeof CarrinhoRoute
+  '/catalogo': typeof CatalogoRouteWithChildren
   '/conta': typeof ContaRoute
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
@@ -142,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/produto/$slug': typeof ProdutoSlugRoute
   '/catalogo/': typeof CatalogoIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
+  '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
@@ -162,6 +177,7 @@ export interface FileRoutesByTo {
   '/produto/$slug': typeof ProdutoSlugRoute
   '/catalogo': typeof CatalogoIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
+  '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
@@ -175,6 +191,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/carrinho': typeof CarrinhoRoute
+  '/catalogo': typeof CatalogoRouteWithChildren
   '/conta': typeof ContaRoute
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
@@ -184,6 +201,7 @@ export interface FileRoutesById {
   '/produto/$slug': typeof ProdutoSlugRoute
   '/catalogo/': typeof CatalogoIndexRoute
   '/_authenticated/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
+  '/_authenticated/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/_authenticated/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
@@ -197,6 +215,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/carrinho'
+    | '/catalogo'
     | '/conta'
     | '/contato'
     | '/entrega'
@@ -206,6 +225,7 @@ export interface FileRouteTypes {
     | '/produto/$slug'
     | '/catalogo/'
     | '/admin/categorias'
+    | '/admin/estoque'
     | '/admin/tela-inicial'
     | '/admin/'
     | '/admin/produtos/$id'
@@ -226,6 +246,7 @@ export interface FileRouteTypes {
     | '/produto/$slug'
     | '/catalogo'
     | '/admin/categorias'
+    | '/admin/estoque'
     | '/admin/tela-inicial'
     | '/admin'
     | '/admin/produtos/$id'
@@ -238,6 +259,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/carrinho'
+    | '/catalogo'
     | '/conta'
     | '/contato'
     | '/entrega'
@@ -247,6 +269,7 @@ export interface FileRouteTypes {
     | '/produto/$slug'
     | '/catalogo/'
     | '/_authenticated/admin/categorias'
+    | '/_authenticated/admin/estoque'
     | '/_authenticated/admin/tela-inicial'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/produtos/$id'
@@ -260,13 +283,12 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CarrinhoRoute: typeof CarrinhoRoute
+  CatalogoRoute: typeof CatalogoRouteWithChildren
   ContaRoute: typeof ContaRoute
   ContatoRoute: typeof ContatoRoute
   EntregaRoute: typeof EntregaRoute
   TrocasRoute: typeof TrocasRoute
-  CatalogoCategoriaRoute: typeof CatalogoCategoriaRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
-  CatalogoIndexRoute: typeof CatalogoIndexRoute
   ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
 }
 
@@ -298,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/carrinho'
       fullPath: '/carrinho'
       preLoaderRoute: typeof CarrinhoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalogo': {
+      id: '/catalogo'
+      path: '/catalogo'
+      fullPath: '/catalogo'
+      preLoaderRoute: typeof CatalogoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conta': {
@@ -337,17 +366,17 @@ declare module '@tanstack/react-router' {
     }
     '/catalogo/': {
       id: '/catalogo/'
-      path: '/catalogo'
+      path: '/'
       fullPath: '/catalogo/'
       preLoaderRoute: typeof CatalogoIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CatalogoRoute
     }
     '/catalogo/$categoria': {
       id: '/catalogo/$categoria'
-      path: '/catalogo/$categoria'
+      path: '/$categoria'
       fullPath: '/catalogo/$categoria'
       preLoaderRoute: typeof CatalogoCategoriaRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CatalogoRoute
     }
     '/produto/$slug': {
       id: '/produto/$slug'
@@ -368,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/categorias'
       fullPath: '/admin/categorias'
       preLoaderRoute: typeof AuthenticatedAdminCategoriasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/estoque': {
+      id: '/_authenticated/admin/estoque'
+      path: '/admin/estoque'
+      fullPath: '/admin/estoque'
+      preLoaderRoute: typeof AuthenticatedAdminEstoqueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/tela-inicial': {
@@ -411,6 +447,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRoute
   AuthenticatedAdminCategoriasRoute: typeof AuthenticatedAdminCategoriasRoute
+  AuthenticatedAdminEstoqueRoute: typeof AuthenticatedAdminEstoqueRoute
   AuthenticatedAdminTelaInicialRoute: typeof AuthenticatedAdminTelaInicialRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminProdutosIdRoute: typeof AuthenticatedAdminProdutosIdRoute
@@ -421,6 +458,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRoute,
   AuthenticatedAdminCategoriasRoute: AuthenticatedAdminCategoriasRoute,
+  AuthenticatedAdminEstoqueRoute: AuthenticatedAdminEstoqueRoute,
   AuthenticatedAdminTelaInicialRoute: AuthenticatedAdminTelaInicialRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminProdutosIdRoute: AuthenticatedAdminProdutosIdRoute,
@@ -431,18 +469,31 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface CatalogoRouteChildren {
+  CatalogoCategoriaRoute: typeof CatalogoCategoriaRoute
+  CatalogoIndexRoute: typeof CatalogoIndexRoute
+}
+
+const CatalogoRouteChildren: CatalogoRouteChildren = {
+  CatalogoCategoriaRoute: CatalogoCategoriaRoute,
+  CatalogoIndexRoute: CatalogoIndexRoute,
+}
+
+const CatalogoRouteWithChildren = CatalogoRoute._addFileChildren(
+  CatalogoRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CarrinhoRoute: CarrinhoRoute,
+  CatalogoRoute: CatalogoRouteWithChildren,
   ContaRoute: ContaRoute,
   ContatoRoute: ContatoRoute,
   EntregaRoute: EntregaRoute,
   TrocasRoute: TrocasRoute,
-  CatalogoCategoriaRoute: CatalogoCategoriaRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
-  CatalogoIndexRoute: CatalogoIndexRoute,
   ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
 }
 export const routeTree = rootRouteImport

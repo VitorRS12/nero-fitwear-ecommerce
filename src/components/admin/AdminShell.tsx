@@ -40,6 +40,9 @@ export function AdminShell({ title, action, children }: AdminShellProps) {
                   <Link to="/admin/produtos">Peças</Link>
                 </Button>
                 <Button asChild variant="ghost" size="sm" className="label-caps">
+                  <Link to="/admin/estoque">Estoque</Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm" className="label-caps">
                   <Link to="/admin/categorias">Categorias</Link>
                 </Button>
                 <Button asChild variant="ghost" size="sm" className="label-caps">
