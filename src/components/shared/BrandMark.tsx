@@ -14,10 +14,10 @@ export function BrandMark({ className }: BrandMarkProps) {
     <span className={cn("inline-flex items-end gap-1.5", className)}>
       <img src="/brand/nero-mark.png" alt="Nero Fitwear" className="h-6 w-auto object-contain" />
       <img
-        src="/brand/nero-fitwear-logo.png"
+        src="/brand/nero-fitwear-word.png"
         alt=""
         aria-hidden
-        className="mb-[9px] h-2 w-auto object-contain"
+        className="mb-[6px] h-3 w-auto object-contain"
       />
     </span>
   );

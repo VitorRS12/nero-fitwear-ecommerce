@@ -32,15 +32,13 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
     };
   }, [api]);
 
-  const firstImageId = images[0]?.id;
-
   useEffect(() => {
     if (api) api.scrollTo(0);
-  }, [api, images.length, firstImageId]);
+  }, [api, images.length, images[0]?.id]);
 
   if (images.length === 0) {
     return (
-      <div className="aspect-[3/4] overflow-hidden bg-graphite">
+      <div className="aspect-3/4 overflow-hidden bg-graphite">
         <ProductThumb alt={alt} priority />
       </div>
     );
@@ -52,11 +50,13 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
         <CarouselContent>
           {images.map((image, index) => (
             <CarouselItem key={image.id}>
-              <div className="aspect-[3/4] overflow-hidden bg-graphite">
+              <div className="aspect-3/4 overflow-hidden bg-graphite">
                 <ProductThumb
                   url={image.url}
                   alt={image.alt ?? alt}
                   priority={index === 0}
+                  focalX={image.focal_x}
+                  focalY={image.focal_y}
                   className="transition-transform duration-500 hover:scale-105"
                 />
               </div>
@@ -81,11 +81,16 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                 aria-current={current === index}
                 onClick={() => api?.scrollTo(index)}
                 className={cn(
-                  "block aspect-[3/4] w-full overflow-hidden border bg-graphite transition-colors",
+                  "block aspect-3/4 w-full overflow-hidden border bg-graphite transition-colors",
                   current === index ? "border-foreground" : "border-transparent opacity-60",
                 )}
               >
-                <ProductThumb url={image.url} alt={image.alt ?? alt} />
+                <ProductThumb
+                  url={image.url}
+                  alt={image.alt ?? alt}
+                  focalX={image.focal_x}
+                  focalY={image.focal_y}
+                />
               </button>
             </li>
           ))}

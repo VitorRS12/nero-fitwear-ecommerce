@@ -34,11 +34,13 @@ export function ProductCard({ product, priority }: ProductCardProps) {
         params={{ slug: product.slug }}
         className="block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
       >
-        <div className="relative aspect-[3/4] overflow-hidden bg-graphite">
+        <div className="relative aspect-3/4] overflow-hidden bg-graphite">
           <ProductThumb
             url={image?.url}
             alt={image?.alt ?? product.name}
             priority={priority}
+            focalX={image?.focal_x}
+            focalY={image?.focal_y}
             className="transition-transform duration-500 group-hover:scale-105"
           />
           {hoverImage ? (
@@ -49,6 +51,7 @@ export function ProductCard({ product, priority }: ProductCardProps) {
               loading="lazy"
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              style={{ objectPosition: `${hoverImage.focal_x}% ${hoverImage.focal_y}%` }}
             />
           ) : null}
 

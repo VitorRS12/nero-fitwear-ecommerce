@@ -30,7 +30,7 @@ async function assertAdmin(context: AuthedContext) {
 const ADMIN_PRODUCT_SELECT = `
   id, name, slug, short_description, description, base_price, sale_price,
   is_featured, is_new, is_active, category_id, collection_id, tags, created_at,
-  product_images ( id, url, alt, color, position, is_primary ),
+  product_images ( id, url, alt, color, position, is_primary, focal_x, focal_y ),
   product_variants ( id, sku, color, color_hex, size, price, stock, is_active )
 `;
 
@@ -93,7 +93,7 @@ export const adminListCategories = createServerFn({ method: "GET" })
     await assertAdmin(ctx);
     const { data, error } = await ctx.supabase
       .from("categories")
-      .select("id, name, slug, description, image_url, position, is_active, created_at, updated_at")
+      .select("id, name, slug, description, image_url, position, is_active, created_at, updated_at, focal_x, focal_y")
       .order("position", { ascending: true })
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
@@ -105,7 +105,12 @@ const categorySchema = z.object({
   name: z.string().trim().min(2).max(100),
   slug: z.string().trim().min(2).max(120),
   description: z.string().trim().max(500).nullable(),
+  
   image_url: z.string().trim().nullable(),
+  focal_x: z.number().min(0).max(100),
+  focal_y: z.number().min(0).max(100),
+ 
+ 
   position: z.number().int().min(0),
   is_active: z.boolean(),
 });
@@ -319,6 +324,8 @@ export const adminAddImages = createServerFn({ method: "POST" })
               path: z.string().min(1),
               alt: z.string().nullable(),
               color: z.string().nullable(),
+              focal_x: z.number().min(0).max(100).default(50),
+              focal_y: z.number().min(0).max(100).default(50),
             }),
           )
           .min(1),
@@ -344,11 +351,17 @@ export const adminAddImages = createServerFn({ method: "POST" })
       url: storagePathToUrl(image.path),
       alt: image.alt,
       color: image.color,
+      focal_x: image.focal_x,
+      focal_y: image.focal_y,
       position: start + index,
       is_primary: isFirst && index === 0,
     }));
 
-    const { error } = await ctx.supabase.from("product_images").insert(rows);
+    const { error } = await ctx.supabase
+      .from("product_images")
+      .insert(
+        rows as unknown as Database["public"]["Tables"]["product_images"]["Insert"][],
+      );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -361,6 +374,8 @@ export const adminUpdateImage = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         alt: z.string().nullable().optional(),
         color: z.string().nullable().optional(),
+        focal_x: z.number().min(0).max(100).optional(),
+        focal_y: z.number().min(0).max(100).optional(),
       })
       .parse(input),
   )
@@ -368,13 +383,18 @@ export const adminUpdateImage = createServerFn({ method: "POST" })
     const ctx = context as AuthedContext;
     await assertAdmin(ctx);
 
-    const patch: { alt?: string | null; color?: string | null } = {};
+    const patch: { alt?: string | null; color?: string | null; focal_x?: number; focal_y?: number } = {};
     if (data.alt !== undefined) patch.alt = data.alt;
     if (data.color !== undefined) patch.color = data.color;
+    if (data.focal_x !== undefined) patch.focal_x = data.focal_x;
+    if (data.focal_y !== undefined) patch.focal_y = data.focal_y;
     if (Object.keys(patch).length === 0) return { ok: true };
 
 
-    const { error } = await ctx.supabase.from("product_images").update(patch).eq("id", data.id);
+    const { error } = await ctx.supabase
+      .from("product_images")
+      .update(patch as never)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -433,7 +453,7 @@ export const adminListHomeMedia = createServerFn({ method: "GET" })
     await assertAdmin(ctx);
     const { data, error } = await ctx.supabase
       .from("home_media")
-      .select("id, slot, url, alt, is_active");
+      .select("id, slot, url, alt, is_active, focal_x, focal_y");
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -446,6 +466,9 @@ export const adminSetHomeMedia = createServerFn({ method: "POST" })
         slot: homeSlotSchema,
         path: z.string().min(1),
         alt: z.string().nullable().default(null),
+        focal_x: z.number().min(0).max(100).default(50),
+        focal_y: z.number().min(0).max(100).default(50),
+        is_active: z.boolean().default(true),
       })
       .parse(input),
   )
@@ -461,15 +484,18 @@ export const adminSetHomeMedia = createServerFn({ method: "POST" })
       .maybeSingle();
     const previousPath = previous ? urlToStoragePath(previous.url) : null;
 
-    const { error } = await ctx.supabase.from("home_media").upsert(
-      {
-        slot: data.slot,
-        url: storagePathToUrl(data.path),
-        alt: data.alt,
-        is_active: true,
-      },
-      { onConflict: "slot" },
-    );
+    const homeMedia = {
+      slot: data.slot,
+      url: storagePathToUrl(data.path),
+      alt: data.alt,
+      focal_x: data.focal_x,
+      focal_y: data.focal_y,
+      is_active: data.is_active,
+    } as unknown as Database["public"]["Tables"]["home_media"]["Insert"];
+
+    const { error } = await ctx.supabase
+      .from("home_media")
+      .upsert(homeMedia, { onConflict: "slot" });
     if (error) throw new Error(error.message);
 
     if (previousPath && previousPath !== data.path) {

@@ -575,7 +575,6 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
-          low_stock_threshold: number
           price: number | null
           product_id: string
           reserved: number
@@ -591,7 +590,6 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
-          low_stock_threshold?: number
           price?: number | null
           product_id: string
           reserved?: number
@@ -607,7 +605,6 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
-          low_stock_threshold?: number
           price?: number | null
           product_id?: string
           reserved?: number
@@ -783,26 +780,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_adjust_stock: {
-        Args: {
-          _mode: string
-          _note: string
-          _quantity: number
-          _variant_id: string
-        }
-        Returns: Json
-      }
       apply_mercado_pago_payment: {
         Args: {
           _amount: number
-          _currency: string
-          _external_reference: string
-          _method: string
           _order_id: string
           _provider_payment_id: string
           _provider_status: string
           _raw_payload: Json
-          _status_detail: string
         }
         Returns: Json
       }
@@ -893,8 +877,6 @@ export type Database = {
         | "rejected"
         | "cancelled"
         | "refunded"
-        | "in_mediation"
-        | "charged_back"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1044,8 +1026,6 @@ export const Constants = {
         "rejected",
         "cancelled",
         "refunded",
-        "in_mediation",
-        "charged_back",
       ],
     },
   },

@@ -8,18 +8,10 @@ interface Feature {
 }
 
 const DEFAULT_FEATURES: Feature[] = [
-  {
-    icon: Truck,
-    title: "Frete grátis",
-    description: "Em pedidos acima de R$ 399 para todo o Brasil.",
-  },
+  { icon: Truck, title: "Frete grátis", description: "Em pedidos acima de R$ 399 para todo o Brasil." },
   { icon: RefreshCw, title: "Troca fácil", description: "30 dias para trocar tamanho sem custo." },
   { icon: CreditCard, title: "PIX e cartão", description: "Até 12x no cartão ou 5% off no PIX." },
-  {
-    icon: ShieldCheck,
-    title: "Compra segura",
-    description: "Pagamento processado pelo Mercado Pago.",
-  },
+  { icon: ShieldCheck, title: "Compra segura", description: "Pagamento processado pelo Stripe." },
 ];
 
 export function FeatureSection({ features = DEFAULT_FEATURES }: { features?: Feature[] }) {

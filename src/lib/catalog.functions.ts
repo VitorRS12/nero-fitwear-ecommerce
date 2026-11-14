@@ -31,7 +31,7 @@ function createPublicClient() {
 const PRODUCT_SELECT = `
   id, name, slug, short_description, description, base_price, sale_price,
   is_featured, is_new, category_id, created_at,
-  product_images ( id, url, alt, color, position ),
+  product_images ( id, url, alt, color, position, focal_x, focal_y ),
   product_variants ( id, sku, color, color_hex, size, price, stock, image_url )
 `;
 
@@ -39,7 +39,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(async ()
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, slug, description, image_url, position")
+    .select("id, name, slug, description, image_url, position, focal_x, focal_y")
     .eq("is_active", true)
     .order("position", { ascending: true });
 
@@ -105,7 +105,7 @@ export const listHomeMedia = createServerFn({ method: "GET" }).handler(async () 
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("home_media")
-    .select("id, slot, url, alt, is_active")
+    .select("id, slot, url, alt, is_active, focal_x, focal_y")
     .eq("is_active", true);
 
   if (error) throw new Error(error.message);

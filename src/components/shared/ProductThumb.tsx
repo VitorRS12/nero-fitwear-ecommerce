@@ -6,13 +6,23 @@ interface ProductThumbProps {
   className?: string | undefined;
   sizes?: string | undefined;
   priority?: boolean | undefined;
+  focalX?: number | undefined;
+  focalY?: number | undefined;
 }
 
 /**
  * Imagem de produto com fallback de marca (usado enquanto as fotos
  * oficiais não são carregadas no Storage).
  */
-export function ProductThumb({ url, alt, className, sizes, priority }: ProductThumbProps) {
+export function ProductThumb({
+  url,
+  alt,
+  className,
+  sizes,
+  priority,
+  focalX = 50,
+  focalY = 50,
+}: ProductThumbProps) {
   if (!url) {
     return (
       <div
@@ -36,6 +46,7 @@ export function ProductThumb({ url, alt, className, sizes, priority }: ProductTh
       loading={priority ? "eager" : "lazy"}
       decoding="async"
       className={cn("h-full w-full object-cover", className)}
+      style={{ objectPosition: `${focalX}% ${focalY}%` }}
     />
   );
 }
