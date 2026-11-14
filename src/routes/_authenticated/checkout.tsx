@@ -56,7 +56,7 @@ function CheckoutPage() {
     const id = params.get("pedido") ?? window.localStorage.getItem(PENDING_KEY);
     if (!id) return;
     fetchOrder({ data: { orderId: id } })
-      .then((result) => {
+      .then((result: StripeOrder) => {
         if (result.paymentStatus === "pending" || result.paymentStatus === "rejected" || params.get("pedido")) setOrder(result);
         else window.localStorage.removeItem(PENDING_KEY);
       })
@@ -105,7 +105,7 @@ function CheckoutPage() {
     const hasAddress = isPickup || Boolean(address.street);
     const summaryAddress = isPickup ? PICKUP_ADDRESS : address;
     return <StoreLayout><Section eyebrow="Pagamento" title="Finalizar pagamento">
-      <StripeCheckout initialOrder={order} email={customer.email} onPaid={onPaid} onBack={onBack} summary={{
+      <StripeCheckout initialOrder={order} onPaid={onPaid} onBack={onBack} summary={{
         items, subtotal: totals.subtotal, discount: totals.discount,
         shipping: selectedShipping?.price ?? 0, shippingLabel: selectedShipping?.label,
         address: hasAddress ? summaryAddress : undefined,
