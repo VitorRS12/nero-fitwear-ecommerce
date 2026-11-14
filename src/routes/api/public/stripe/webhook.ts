@@ -11,7 +11,7 @@ const HANDLED = new Set([
 export const Route = createFileRoute("/api/public/stripe/webhook")({
   server: {
     handlers: {
-      POST: async ({ request }: { request: Request }) => {
+      POST: async ({ request }) => {
         const secret = process.env["STRIPE_WEBHOOK_SECRET"];
         const signature = request.headers.get("stripe-signature");
         if (!secret || !signature) return new Response("Unauthorized", { status: 401 });
@@ -38,4 +38,4 @@ export const Route = createFileRoute("/api/public/stripe/webhook")({
       },
     },
   },
-} as any);
+});

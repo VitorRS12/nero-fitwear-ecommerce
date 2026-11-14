@@ -23,14 +23,12 @@ import { Route as CatalogoIndexRouteImport } from './routes/catalogo.index'
 import { Route as CatalogoCategoriaRouteImport } from './routes/catalogo.$categoria'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
 import { Route as AuthenticatedAdminEstoqueRouteImport } from './routes/_authenticated/admin.estoque'
 import { Route as AuthenticatedAdminTelaInicialRouteImport } from './routes/_authenticated/admin.tela-inicial'
 import { Route as AuthenticatedAdminProdutosIndexRouteImport } from './routes/_authenticated/admin.produtos.index'
 import { Route as AuthenticatedAdminProdutosIdRouteImport } from './routes/_authenticated/admin.produtos.$id'
 import { Route as AuthenticatedAdminProdutosNovoRouteImport } from './routes/_authenticated/admin.produtos.novo'
 import { Route as ApiPublicImgSplatRouteImport } from './routes/api/public/img/$'
-import { Route as ApiPublicMercadoPagoWebhookRouteImport } from './routes/api/public/mercado-pago/webhook'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -102,12 +100,6 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminCategoriasRoute =
-  AuthenticatedAdminCategoriasRouteImport.update({
-    id: '/admin/categorias',
-    path: '/admin/categorias',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAdminEstoqueRoute =
   AuthenticatedAdminEstoqueRouteImport.update({
     id: '/admin/estoque',
@@ -143,12 +135,6 @@ const ApiPublicImgSplatRoute = ApiPublicImgSplatRouteImport.update({
   path: '/api/public/img/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicMercadoPagoWebhookRoute =
-  ApiPublicMercadoPagoWebhookRouteImport.update({
-    id: '/api/public/mercado-pago/webhook',
-    path: '/api/public/mercado-pago/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   id: '/api/public/stripe/webhook',
   path: '/api/public/stripe/webhook',
@@ -168,14 +154,12 @@ export interface FileRoutesByFullPath {
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/catalogo/': typeof CatalogoIndexRoute
-  '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/admin/produtos/novo': typeof AuthenticatedAdminProdutosNovoRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
-  '/api/public/mercado-pago/webhook': typeof ApiPublicMercadoPagoWebhookRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/produtos/': typeof AuthenticatedAdminProdutosIndexRoute
 }
@@ -191,14 +175,12 @@ export interface FileRoutesByTo {
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/catalogo': typeof CatalogoIndexRoute
-  '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/admin/produtos/novo': typeof AuthenticatedAdminProdutosNovoRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
-  '/api/public/mercado-pago/webhook': typeof ApiPublicMercadoPagoWebhookRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosIndexRoute
 }
@@ -217,14 +199,12 @@ export interface FileRoutesById {
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/catalogo/': typeof CatalogoIndexRoute
-  '/_authenticated/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/_authenticated/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/_authenticated/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/_authenticated/admin/produtos/novo': typeof AuthenticatedAdminProdutosNovoRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
-  '/api/public/mercado-pago/webhook': typeof ApiPublicMercadoPagoWebhookRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/admin/produtos/': typeof AuthenticatedAdminProdutosIndexRoute
 }
@@ -243,14 +223,12 @@ export interface FileRouteTypes {
     | '/catalogo/$categoria'
     | '/produto/$slug'
     | '/catalogo/'
-    | '/admin/categorias'
     | '/admin/estoque'
     | '/admin/tela-inicial'
     | '/admin/'
     | '/admin/produtos/$id'
     | '/admin/produtos/novo'
     | '/api/public/img/$'
-    | '/api/public/mercado-pago/webhook'
     | '/api/public/stripe/webhook'
     | '/admin/produtos/'
   fileRoutesByTo: FileRoutesByTo
@@ -266,14 +244,12 @@ export interface FileRouteTypes {
     | '/catalogo/$categoria'
     | '/produto/$slug'
     | '/catalogo'
-    | '/admin/categorias'
     | '/admin/estoque'
     | '/admin/tela-inicial'
     | '/admin'
     | '/admin/produtos/$id'
     | '/admin/produtos/novo'
     | '/api/public/img/$'
-    | '/api/public/mercado-pago/webhook'
     | '/api/public/stripe/webhook'
     | '/admin/produtos'
   id:
@@ -291,14 +267,12 @@ export interface FileRouteTypes {
     | '/catalogo/$categoria'
     | '/produto/$slug'
     | '/catalogo/'
-    | '/_authenticated/admin/categorias'
     | '/_authenticated/admin/estoque'
     | '/_authenticated/admin/tela-inicial'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/produtos/$id'
     | '/_authenticated/admin/produtos/novo'
     | '/api/public/img/$'
-    | '/api/public/mercado-pago/webhook'
     | '/api/public/stripe/webhook'
     | '/_authenticated/admin/produtos/'
   fileRoutesById: FileRoutesById
@@ -315,7 +289,6 @@ export interface RootRouteChildren {
   TrocasRoute: typeof TrocasRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
-  ApiPublicMercadoPagoWebhookRoute: typeof ApiPublicMercadoPagoWebhookRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
 
@@ -419,13 +392,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/categorias': {
-      id: '/_authenticated/admin/categorias'
-      path: '/admin/categorias'
-      fullPath: '/admin/categorias'
-      preLoaderRoute: typeof AuthenticatedAdminCategoriasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/admin/estoque': {
       id: '/_authenticated/admin/estoque'
       path: '/admin/estoque'
@@ -468,13 +434,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImgSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/mercado-pago/webhook': {
-      id: '/api/public/mercado-pago/webhook'
-      path: '/api/public/mercado-pago/webhook'
-      fullPath: '/api/public/mercado-pago/webhook'
-      preLoaderRoute: typeof ApiPublicMercadoPagoWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/stripe/webhook': {
       id: '/api/public/stripe/webhook'
       path: '/api/public/stripe/webhook'
@@ -487,7 +446,6 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRoute
-  AuthenticatedAdminCategoriasRoute: typeof AuthenticatedAdminCategoriasRoute
   AuthenticatedAdminEstoqueRoute: typeof AuthenticatedAdminEstoqueRoute
   AuthenticatedAdminTelaInicialRoute: typeof AuthenticatedAdminTelaInicialRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -498,7 +456,6 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRoute,
-  AuthenticatedAdminCategoriasRoute: AuthenticatedAdminCategoriasRoute,
   AuthenticatedAdminEstoqueRoute: AuthenticatedAdminEstoqueRoute,
   AuthenticatedAdminTelaInicialRoute: AuthenticatedAdminTelaInicialRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
@@ -536,7 +493,6 @@ const rootRouteChildren: RootRouteChildren = {
   TrocasRoute: TrocasRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
-  ApiPublicMercadoPagoWebhookRoute: ApiPublicMercadoPagoWebhookRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
