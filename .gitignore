@@ -32,5 +32,4 @@ dist-ssr
 *.sln
 *.sw?
 .vinext/
-.vercel
-.env*
+docker.env

@@ -18,7 +18,8 @@
     "deploy:response-store": "wrangler deploy --config wrangler.response-store.jsonc"
   },
   "overrides": {
-    "rolldown": "1.2.1"
+    "rolldown": "1.2.1",
+    "@tanstack/router-core": "1.171.34"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
