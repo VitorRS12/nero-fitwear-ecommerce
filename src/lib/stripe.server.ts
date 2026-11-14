@@ -46,7 +46,13 @@ export async function applyPaymentIntent(pi: Stripe.PaymentIntent) {
     _raw_payload: intentSnapshot(pi),
   } as never);
   if (error) {
-    console.error("[stripe] apply_stripe_payment failed", error.message);
+    const missing = error.code === "PGRST202" || /schema cache/i.test(error.message);
+    console.error(
+      missing
+        ? "[stripe] apply_stripe_payment ausente neste banco: aplique as migrações de supabase/migrations"
+        : "[stripe] apply_stripe_payment failed",
+      error.message,
+    );
     throw new Error("Falha ao registrar pagamento.");
   }
   return { ok: true, status: mapStripeStatus(pi.status), result: data };
@@ -77,7 +83,7 @@ export async function releaseExpiredStripeOrders(limit = 20) {
         .from("payments").select("provider, provider_payment_id")
         .eq("order_id", order.id);
       // Falha de consulta ou outro provedor: não presumir ausência de cobrança.
-      // Mercado Pago será cancelado/consultado apenas por sua própria rotina.
+      // Pagamentos de provedores antigos não são tocados por esta rotina.
       if (!payments || payments.some((payment) => payment.provider !== "stripe")) continue;
       const intentIds = payments.map((p) => p.provider_payment_id).filter((id): id is string => !!id);
       let paid = false;

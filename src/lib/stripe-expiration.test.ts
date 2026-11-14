@@ -26,7 +26,7 @@ function setup(payments: unknown) {
 describe("isolamento da expiração Stripe", () => {
   afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 
-  it("não libera nem cancela pedido com pagamento Mercado Pago", async () => {
+  it("não libera nem cancela pedido de outro provedor (legado)", async () => {
     setup([{ provider: "mercadopago", provider_payment_id: "123" }]);
     expect(await releaseExpiredStripeOrders()).toBe(0);
     expect(release).not.toHaveBeenCalled();

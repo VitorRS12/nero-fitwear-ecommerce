@@ -53,8 +53,8 @@ function publishableKey() {
 
 /** Cria (ou reaproveita) o pedido e o PaymentIntent do Stripe. O valor vem sempre do banco. */
 export const startStripeCheckout = createServerFn({ method: "POST" })
+  .validator((input: unknown) => checkoutSchema.parse(input))
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => checkoutSchema.parse(input))
   .handler(async ({ data, context }): Promise<StripeOrder> => {
     const pk = publishableKey();
     const { getStripe, releaseExpiredStripeOrders } = await import("@/lib/stripe.server");
@@ -126,8 +126,8 @@ export const startStripeCheckout = createServerFn({ method: "POST" })
 
 /** Consulta o pedido e sincroniza com o Stripe (caso o webhook ainda não tenha chegado). */
 export const getStripeOrder = createServerFn({ method: "POST" })
+  .validator((input: unknown) => z.object({ orderId: z.string().uuid() }).parse(input))
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ orderId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<StripeOrder> => {
     const pk = publishableKey();
     const { data: order, error } = await context.supabase
