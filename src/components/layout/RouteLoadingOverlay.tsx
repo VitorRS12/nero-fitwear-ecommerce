@@ -1,7 +1,7 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import markAsset from "@/assets/nero-mark.png.asset.json";
+import markAsset from "@/assets/nero-mark-loading.png";
 
 const SHOW_DELAY_MS = 120;
 
@@ -32,7 +32,7 @@ export function RouteLoadingOverlay() {
       role="status"
       aria-live="polite"
       aria-label="Carregando"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-[2px]"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-background/95 backdrop-blur-[2px]"
     >
       {/* linha de progresso indeterminada no topo */}
       <div className="absolute inset-x-0 top-0 h-px overflow-hidden bg-border">
@@ -44,7 +44,7 @@ export function RouteLoadingOverlay() {
           <span className="absolute inset-0 rounded-full border border-border" />
           <span className="nero-orbit absolute inset-0 rounded-full border border-transparent border-t-foreground" />
           <img
-            src={markAsset.url}
+            src={markAsset}
             alt=""
             aria-hidden
             className="nero-breathe h-12 w-12 object-contain"
