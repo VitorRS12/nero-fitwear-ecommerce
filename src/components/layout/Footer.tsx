@@ -70,6 +70,16 @@ export function Footer({ categories }: FooterProps) {
               </Link>
             </li>
             <li>
+              <Link to="/termos" className="text-muted-foreground hover:text-foreground">
+                Termos de uso
+              </Link>
+            </li>
+            <li>
+              <Link to="/privacidade" className="text-muted-foreground hover:text-foreground">
+                Privacidade
+              </Link>
+            </li>
+            <li>
               <Link to="/conta" className="text-muted-foreground hover:text-foreground">
                 Meus pedidos
               </Link>

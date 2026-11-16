@@ -31,26 +31,28 @@ export function Hero({
           src={imageUrl}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover opacity-40"
+          fetchPriority="high"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover opacity-70 sm:opacity-55"
           style={{ objectPosition: `${focalX}% ${focalY}%` }}
         />
       ) : null}
-      <div className="absolute inset-0 bg-background/40" aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10 sm:bg-gradient-to-r sm:from-background/90 sm:via-background/50 sm:to-transparent" aria-hidden="true" />
 
-      <div className="container-nero relative grid min-h-[70vh] items-center py-20">
+      <div className="container-nero relative grid min-h-[85svh] items-end pb-12 pt-24 sm:min-h-[70vh] sm:items-center sm:py-20">
         <div className="max-w-3xl space-y-6">
           <p className="label-caps text-accent">{eyebrow}</p>
-          <h1 className="whitespace-pre-line text-6xl leading-[0.9] sm:text-8xl lg:text-9xl">
+          <h1 className="whitespace-pre-line break-words text-5xl leading-[0.9] sm:text-8xl lg:text-9xl">
             {title}
           </h1>
           {subtitle ? (
             <p className="max-w-lg text-base text-muted-foreground sm:text-lg">{subtitle}</p>
           ) : null}
-          <div className="flex flex-wrap gap-3 pt-2">
-            <Button size="lg" asChild className="label-caps">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap">
+            <Button size="lg" asChild className="label-caps w-full sm:w-auto">
               <Link to="/catalogo">{primaryLabel}</Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="label-caps">
+            <Button size="lg" variant="outline" asChild className="label-caps w-full sm:w-auto">
               <Link to="/catalogo" search={{ novidades: true }}>
                 {secondaryLabel}
               </Link>
