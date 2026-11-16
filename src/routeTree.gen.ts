@@ -17,6 +17,8 @@ import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as EntregaRouteImport } from './routes/entrega'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as TermosRouteImport } from './routes/termos'
 import { Route as TrocasRouteImport } from './routes/trocas'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as CatalogoIndexRouteImport } from './routes/catalogo.index'
@@ -69,6 +71,16 @@ const ContatoRoute = ContatoRouteImport.update({
 const EntregaRoute = EntregaRouteImport.update({
   id: '/entrega',
   path: '/entrega',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrocasRoute = TrocasRouteImport.update({
@@ -156,6 +168,8 @@ export interface FileRoutesByFullPath {
   '/conta': typeof ContaRoute
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/trocas': typeof TrocasRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
@@ -178,6 +192,8 @@ export interface FileRoutesByTo {
   '/conta': typeof ContaRoute
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/trocas': typeof TrocasRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
@@ -203,6 +219,8 @@ export interface FileRoutesById {
   '/conta': typeof ContaRoute
   '/contato': typeof ContatoRoute
   '/entrega': typeof EntregaRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/trocas': typeof TrocasRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/catalogo/$categoria': typeof CatalogoCategoriaRoute
@@ -228,6 +246,8 @@ export interface FileRouteTypes {
     | '/conta'
     | '/contato'
     | '/entrega'
+    | '/privacidade'
+    | '/termos'
     | '/trocas'
     | '/checkout'
     | '/catalogo/$categoria'
@@ -250,6 +270,8 @@ export interface FileRouteTypes {
     | '/conta'
     | '/contato'
     | '/entrega'
+    | '/privacidade'
+    | '/termos'
     | '/trocas'
     | '/checkout'
     | '/catalogo/$categoria'
@@ -274,6 +296,8 @@ export interface FileRouteTypes {
     | '/conta'
     | '/contato'
     | '/entrega'
+    | '/privacidade'
+    | '/termos'
     | '/trocas'
     | '/_authenticated/checkout'
     | '/catalogo/$categoria'
@@ -299,6 +323,8 @@ export interface RootRouteChildren {
   ContaRoute: typeof ContaRoute
   ContatoRoute: typeof ContatoRoute
   EntregaRoute: typeof EntregaRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
+  TermosRoute: typeof TermosRoute
   TrocasRoute: typeof TrocasRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
@@ -361,6 +387,20 @@ declare module '@tanstack/react-router' {
       path: '/entrega'
       fullPath: '/entrega'
       preLoaderRoute: typeof EntregaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trocas': {
@@ -512,6 +552,8 @@ const rootRouteChildren: RootRouteChildren = {
   ContaRoute: ContaRoute,
   ContatoRoute: ContatoRoute,
   EntregaRoute: EntregaRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
+  TermosRoute: TermosRoute,
   TrocasRoute: TrocasRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
