@@ -23,7 +23,7 @@ function PrivacyPage() {
     <StoreLayout>
       <Section eyebrow="Legal" title="Política de Privacidade">
         <LegalDocument
-          updatedAt="15 de novembro de 2026"
+          updatedAt="17 de novembro de 2026"
           sections={[
             {
               title: "Responsável pelos dados",
@@ -39,7 +39,8 @@ function PrivacyPage() {
               title: "Dados que coletamos",
               body: (
                 <ul>
-                  <li>Cadastro: nome, e-mail e senha (guardada de forma protegida).</li>
+                  <li>Cadastro: nome, e-mail e senha (guardada de forma protegida). Se você entrar com Google ou Apple, recebemos apenas nome e e-mail.</li>
+                  <li>Aceite: data e versão em que você aceitou os Termos e esta Política.</li>
                   <li>Pedidos: telefone, CPF, endereço de entrega, itens comprados e histórico de pedidos.</li>
                   <li>Pagamento: os dados do cartão são digitados diretamente no formulário da Stripe; recebemos apenas a confirmação e dados básicos da transação.</li>
                   <li>Contato: as informações que você enviar pela página de contato.</li>
@@ -49,11 +50,18 @@ function PrivacyPage() {
             {
               title: "Para que usamos",
               body: (
+                <>
                 <ul>
                   <li>Processar pagamentos, separar, enviar ou preparar a retirada dos pedidos.</li>
                   <li>Falar com você sobre pedidos, trocas e atendimento.</li>
                   <li>Prevenir fraudes e cumprir obrigações legais e fiscais.</li>
                 </ul>
+                <p>
+                  Bases legais (LGPD, art. 7º): execução de contrato (compras e entrega), cumprimento de obrigação
+                  legal (notas e registros fiscais), legítimo interesse (prevenção a fraudes) e consentimento
+                  (aceite no cadastro). Não vendemos seus dados.
+                </p>
+                </>
               ),
             },
             {
@@ -98,8 +106,9 @@ function PrivacyPage() {
               title: "Por quanto tempo guardamos",
               body: (
                 <p>
-                  Mantemos os dados da conta enquanto ela estiver ativa e os dados de pedidos pelo prazo exigido pela
-                  legislação fiscal e de defesa do consumidor.
+                  Mantemos os dados da conta enquanto ela estiver ativa. Ao excluir a conta, apagamos cadastro,
+                  endereços e avisos na hora. Os pedidos ficam guardados sem nome, e-mail e telefone pelo prazo exigido
+                  pela legislação fiscal (em geral 5 anos), conforme o art. 16 da LGPD.
                 </p>
               ),
             },
@@ -107,8 +116,10 @@ function PrivacyPage() {
               title: "Seus direitos",
               body: (
                 <p>
-                  Você pode pedir acesso, correção, exclusão, portabilidade dos seus dados ou revogar consentimentos,
-                  pelo e-mail [E-MAIL]. Respondemos no prazo previsto em lei.
+                  Pelo art. 18 da LGPD, você pode confirmar se tratamos seus dados, acessá-los, corrigi-los, pedir
+                  anonimização, portabilidade, informação sobre compartilhamento e revogar o consentimento. A exclusão
+                  da conta pode ser feita por você mesmo em "Minha conta". Os demais pedidos podem ser enviados para
+                  [E-MAIL] e são respondidos em até 15 dias. Você também pode reclamar à ANPD (gov.br/anpd).
                 </p>
               ),
             },
