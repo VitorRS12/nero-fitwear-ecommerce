@@ -1,4 +1,4 @@
-export const TERMS_VERSION = "2026-11-17";
+export const TERMS_VERSION = "2026-11-18";
 
 export interface TermsAcceptance {
   terms_version: string;

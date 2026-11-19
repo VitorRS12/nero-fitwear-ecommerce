@@ -23,15 +23,15 @@ function PrivacyPage() {
     <StoreLayout>
       <Section eyebrow="Legal" title="Política de Privacidade">
         <LegalDocument
-          updatedAt="17 de novembro de 2026"
+          updatedAt="18 de novembro de 2026"
           sections={[
             {
               title: "Responsável pelos dados",
               body: (
                 <p>
-                  [RAZÃO SOCIAL], CNPJ [CNPJ], Rua Jaime Ribeiro da Silva, 101, Santa Terezinha, Dias d'Ávila/BA,
+                  69.829.336 PEDRO HENRIQUE REIS DOS SANTOS DA SILVA, CNPJ 69.829.336/0001-68 , 10A Rua Roberto Rebouças, Centro, Dias d'Ávila/BA,
                   é a responsável pelos seus dados, nos termos da Lei Geral de Proteção de Dados (Lei 13.709/2018).
-                  Contato para assuntos de privacidade: [E-MAIL].
+                  Contato para assuntos de privacidade: suporte@nerofitwear.com.br.
                 </p>
               ),
             },
@@ -119,7 +119,7 @@ function PrivacyPage() {
                   Pelo art. 18 da LGPD, você pode confirmar se tratamos seus dados, acessá-los, corrigi-los, pedir
                   anonimização, portabilidade, informação sobre compartilhamento e revogar o consentimento. A exclusão
                   da conta pode ser feita por você mesmo em "Minha conta". Os demais pedidos podem ser enviados para
-                  [E-MAIL] e são respondidos em até 15 dias. Você também pode reclamar à ANPD (gov.br/anpd).
+                  suporte@nerofitwear.com.br e são respondidos em até 15 dias. Você também pode reclamar à ANPD (gov.br/anpd).
                 </p>
               ),
             },

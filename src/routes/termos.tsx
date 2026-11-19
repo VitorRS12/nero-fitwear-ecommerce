@@ -29,8 +29,8 @@ function TermsPage() {
               title: "Quem somos",
               body: (
                 <p>
-                  A NERO Fitwear é uma loja de roupas fitness operada por [RAZÃO SOCIAL], CNPJ [CNPJ], com
-                  endereço na Rua Jaime Ribeiro da Silva, 101, Santa Terezinha, Dias d'Ávila/BA, CEP 42850-000.
+                  A NERO Fitwear é uma loja de roupas fitness operada por 69.829.336 PEDRO HENRIQUE REIS DOS SANTOS DA SILVA, CNPJ 69.829.336/0001-68, com
+                  endereço na 10A Rua Roberto Rebouças, Centro, Dias d'Ávila/BA, CEP 42850-000.
                   Ao usar o site ou fazer uma compra, você concorda com estes termos.
                 </p>
               ),

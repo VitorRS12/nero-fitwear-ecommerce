@@ -15,7 +15,7 @@ import { CartProvider } from "@/providers/cart-provider";
 import { RouteLoadingOverlay } from "@/components/layout/RouteLoadingOverlay";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportRuntimeError } from "../lib/error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -43,7 +43,7 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    if (error instanceof Error) reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    if (error instanceof Error) reportRuntimeError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
