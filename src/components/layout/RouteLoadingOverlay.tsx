@@ -47,7 +47,7 @@ export function RouteLoadingOverlay() {
             src={markAsset}
             alt=""
             aria-hidden
-            className="nero-breathe h-16 w-16 object-contain"
+            className="nero-breathe h-24 w-24 object-contain"
           />
         </div>
         <span className="label-caps text-muted-foreground">Carregando</span>

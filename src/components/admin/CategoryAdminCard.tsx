@@ -145,10 +145,10 @@ export function CategoryAdminCard({ category, onSaved }: CategoryAdminCardProps)
                 alt="Prévia da capa"
                 value={focal}
                 onChange={setFocal}
-                className="aspect-4/5"
+                className="aspect-[4/5]"
               />
             ) : (
-              <div className="flex aspect-4/5 items-center justify-center border border-border bg-graphite p-3 text-center text-xs text-muted-foreground">
+              <div className="flex aspect-[4/5] items-center justify-center border border-border bg-graphite p-3 text-center text-xs text-muted-foreground">
                 Sem imagem
               </div>
             )}
