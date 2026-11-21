@@ -122,7 +122,6 @@ function PrivacyPage() {
                 <>
                   <p>O site guarda no seu navegador apenas o necessário para funcionar, como a sessão de login e os itens do carrinho. O formulário de pagamento da Stripe pode usar cookies próprios para segurança e prevenção de fraudes.</p>
                   <p>Usamos o Vercel Web Analytics para contar visitas de forma agregada (páginas visitadas, origem, país, navegador, sistema e tipo de aparelho), sem cookies e sem identificar visitantes. Os dados são recebidos pela Vercel, conforme a <a href="https://vercel.com/docs/analytics/privacy-policy" className={link} target="_blank" rel="noreferrer">política de privacidade do Vercel Analytics</a>.</p>
-                  <p>Também usamos as estatísticas de visitas da Lovable, que não usam cookies, não guardam nada no seu aparelho, não mantêm endereços IP e não identificam visitantes. Lovable collects this data for us. <a href="https://lovable.dev/privacy" className={link} target="_blank" rel="noreferrer">Lovable's privacy policy</a> explains how it handles it. São registrados, para todos os visitantes: páginas visitadas, de onde o visitante veio, país, navegador, sistema operacional e tipo de aparelho, tempo no site, velocidade de carregamento das páginas e erros. Os dados detalhados ficam guardados por 90 dias e os resumos diários por um ano.</p>
                   <p>Cookies não essenciais, como os de publicidade, só seriam usados mediante informação e escolha prévia do titular.</p>
                 </>
               ),
