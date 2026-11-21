@@ -32,7 +32,7 @@ export async function applyPaymentIntent(pi: Stripe.PaymentIntent) {
   if (!orderId) return { ok: false, reason: "missing_order" };
   if (pi.currency !== "brl") return { ok: false, reason: "currency" };
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: order } = await supabaseAdmin.from("orders").select("total").eq("id", orderId).maybeSingle();
+  const { data: order } = await supabaseAdmin.from("orders").select("total, payment_status").eq("id", orderId).maybeSingle();
   if (!order || !amountMatches(Number(order.total), pi.amount)) {
     console.error("[stripe] amount mismatch or order missing", { orderId, intent: pi.id });
     return { ok: false, reason: "amount_mismatch" };
@@ -54,6 +54,12 @@ export async function applyPaymentIntent(pi: Stripe.PaymentIntent) {
       error.message,
     );
     throw new Error("Falha ao registrar pagamento.");
+  }
+  const newStatus = (data as { status?: string } | null)?.status;
+  if (newStatus && newStatus !== order.payment_status) {
+    const { sendOrderEmail } = await import("@/lib/email/order-emails.server");
+    if (newStatus === "approved") await sendOrderEmail(orderId, "paid");
+    else if (newStatus === "rejected") await sendOrderEmail(orderId, "failed");
   }
   return { ok: true, status: mapStripeStatus(pi.status), result: data };
 }

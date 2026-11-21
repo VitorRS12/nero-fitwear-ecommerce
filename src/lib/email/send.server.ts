@@ -1,6 +1,6 @@
 import type { EmailContent } from "./templates";
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
+const RESEND_API_URL = "https://api.resend.com/emails";
 export const EMAIL_SENDERS = {
   pedidos: "NERO Fitwear · Pedidos <pedidos@nerofitwear.com.br>",
   suporte: "NERO Fitwear · Suporte <suporte@nerofitwear.com.br>",
@@ -9,24 +9,19 @@ export const EMAIL_SENDERS = {
 
 export type EmailSender = keyof typeof EMAIL_SENDERS;
 
-/**
- * Envia um e-mail pela Resend. Nunca lança: falha de e-mail não pode quebrar pagamento ou pedido.
- * `idempotencyKey` impede envio duplicado do mesmo aviso (webhook + consulta, por exemplo).
- */
 export async function sendEmail(to: string, content: EmailContent, idempotencyKey: string, sender: EmailSender = "contato"): Promise<boolean> {
-  const lovableKey = process.env["LOVABLE_API_KEY"];
   const resendKey = process.env["RESEND_API_KEY"];
-  if (!lovableKey || !resendKey) {
-    console.error("[email] LOVABLE_API_KEY ou RESEND_API_KEY ausente");
+  if (!resendKey) {
+    console.error("[email] RESEND_API_KEY ausente");
     return false;
   }
   if (!to || to.endsWith(".invalid")) return false;
   try {
-    const res = await fetch(`${GATEWAY_URL}/emails`, {
+    const res = await fetch(`${RESEND_API_URL}/emails`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${lovableKey}`,
+        Authorization: `Bearer ${resendKey}`,
         "X-Connection-Api-Key": resendKey,
         "Idempotency-Key": idempotencyKey,
       },

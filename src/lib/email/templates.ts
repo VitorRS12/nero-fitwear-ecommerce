@@ -5,7 +5,7 @@
  */
 
 export const STORE_URL = "https://nerofitwear.com.br";
-export const PICKUP_ADDRESS = "10A Roberto Rebouças, 197, Centro, Dias d'Ávila/BA, CEP 42850-000";
+export const PICKUP_ADDRESS = "10A Rua Roberto Rebouças, 197, Centro, Dias d'Ávila/BA, CEP 42850-000";
 
 export interface EmailContent {
   subject: string;
@@ -96,7 +96,7 @@ function layout(i: LayoutInput): string {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1A1A1A;"><tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
   <tr><td align="center" style="background:${C.dark};padding:28px 24px 20px;">
-    <div style="font-family:'Bebas Neue',Impact,'Arial Narrow Bold',sans-serif;font-size:36px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.onDark};line-height:1;">NERO<span style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:2.5px;vertical-align:middle;color:${C.onDarkMuted};"> FITWEAR</span></div>
+    <div style="font-size:34px;font-weight:800;letter-spacing:-1px;color:${C.onDark};line-height:1;">nero<span style="font-size:11px;font-weight:500;letter-spacing:0;vertical-align:top;"> fitwear</span></div>
     <div style="margin-top:8px;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:${C.onDarkMuted};">Fitwear para o seu movimento</div>
   </td></tr>
   <tr><td style="background:${C.dark};border-top:1px solid #222;padding:40px 28px 36px;">
@@ -111,7 +111,7 @@ function layout(i: LayoutInput): string {
     </table>
   </td></tr>
   <tr><td align="center" style="background:${C.dark};padding:32px 24px;">
-    <div style="font-family:'Bebas Neue',Impact,'Arial Narrow Bold',sans-serif;font-size:26px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.onDark};line-height:1;">NERO<span style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:9px;font-weight:600;letter-spacing:2.5px;vertical-align:middle;color:${C.onDarkMuted};"> FITWEAR</span></div>
+    <div style="font-size:22px;font-weight:800;color:${C.onDark};line-height:.9;">ne<br>ro</div>
     <p style="margin:16px 0;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${C.onDark};">Seu corpo. Sua força. Seu movimento.</p>
     <p style="margin:0 0 16px;"><a href="${STORE_URL}/contato" style="font-size:12px;color:${C.onDark};">Precisa de ajuda? Fale com a NERO.</a></p>
     <p style="margin:0;font-size:10px;line-height:1.6;color:${C.onDarkMuted};">${escapeHtml(i.footerNote)}<br><a href="${STORE_URL}/privacidade" style="color:${C.onDarkMuted};">Política de Privacidade</a></p>
