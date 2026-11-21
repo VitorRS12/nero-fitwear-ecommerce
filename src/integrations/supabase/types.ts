@@ -285,6 +285,103 @@ export type Database = {
           },
         ]
       }
+      order_fulfillment_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["fulfillment_status"] | null
+          fulfillment_id: string
+          id: string
+          note: string | null
+          to_status: Database["public"]["Enums"]["fulfillment_status"]
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["fulfillment_status"] | null
+          fulfillment_id: string
+          id?: string
+          note?: string | null
+          to_status: Database["public"]["Enums"]["fulfillment_status"]
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["fulfillment_status"] | null
+          fulfillment_id?: string
+          id?: string
+          note?: string | null
+          to_status?: Database["public"]["Enums"]["fulfillment_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_fulfillment_events_fulfillment_id_fkey"
+            columns: ["fulfillment_id"]
+            isOneToOne: false
+            referencedRelation: "order_fulfillments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_fulfillments: {
+        Row: {
+          assignee_id: string | null
+          carrier: string | null
+          created_at: string
+          id: string
+          internal_notes: string | null
+          order_id: string
+          preparing_at: string | null
+          priority: boolean
+          ready_at: string | null
+          received_at: string
+          shipped_at: string | null
+          status: Database["public"]["Enums"]["fulfillment_status"]
+          tracking_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          carrier?: string | null
+          created_at?: string
+          id?: string
+          internal_notes?: string | null
+          order_id: string
+          preparing_at?: string | null
+          priority?: boolean
+          ready_at?: string | null
+          received_at?: string
+          shipped_at?: string | null
+          status?: Database["public"]["Enums"]["fulfillment_status"]
+          tracking_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          carrier?: string | null
+          created_at?: string
+          id?: string
+          internal_notes?: string | null
+          order_id?: string
+          preparing_at?: string | null
+          priority?: boolean
+          ready_at?: string | null
+          received_at?: string
+          shipped_at?: string | null
+          status?: Database["public"]["Enums"]["fulfillment_status"]
+          tracking_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_fulfillments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           color: string | null
@@ -575,6 +672,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          low_stock_threshold: number
           price: number | null
           product_id: string
           reserved: number
@@ -590,6 +688,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          low_stock_threshold?: number
           price?: number | null
           product_id: string
           reserved?: number
@@ -605,6 +704,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          low_stock_threshold?: number
           price?: number | null
           product_id?: string
           reserved?: number
@@ -780,13 +880,37 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_stock: {
+        Args: {
+          _mode: string
+          _note: string
+          _quantity: number
+          _variant_id: string
+        }
+        Returns: Json
+      }
+      admin_move_fulfillment: {
+        Args: {
+          _actor: string
+          _carrier?: string
+          _note?: string
+          _order_id: string
+          _to: Database["public"]["Enums"]["fulfillment_status"]
+          _tracking?: string
+        }
+        Returns: Json
+      }
       apply_mercado_pago_payment: {
         Args: {
           _amount: number
+          _currency: string
+          _external_reference: string
+          _method: string
           _order_id: string
           _provider_payment_id: string
           _provider_status: string
           _raw_payload: Json
+          _status_detail: string
         }
         Returns: Json
       }
@@ -858,6 +982,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "customer"
+      fulfillment_status:
+        | "pending"
+        | "preparing"
+        | "awaiting_shipment"
+        | "shipped"
       inventory_movement_type:
         | "reserve"
         | "release"
@@ -877,6 +1006,8 @@ export type Database = {
         | "rejected"
         | "cancelled"
         | "refunded"
+        | "in_mediation"
+        | "charged_back"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1005,6 +1136,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "customer"],
+      fulfillment_status: [
+        "pending",
+        "preparing",
+        "awaiting_shipment",
+        "shipped",
+      ],
       inventory_movement_type: [
         "reserve",
         "release",
@@ -1026,6 +1163,8 @@ export const Constants = {
         "rejected",
         "cancelled",
         "refunded",
+        "in_mediation",
+        "charged_back",
       ],
     },
   },

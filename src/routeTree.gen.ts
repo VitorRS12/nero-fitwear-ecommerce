@@ -27,6 +27,7 @@ import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
 import { Route as AuthenticatedAdminEstoqueRouteImport } from './routes/_authenticated/admin.estoque'
+import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
 import { Route as AuthenticatedAdminTelaInicialRouteImport } from './routes/_authenticated/admin.tela-inicial'
 import { Route as AuthenticatedAdminProdutosIndexRouteImport } from './routes/_authenticated/admin.produtos.index'
 import { Route as AuthenticatedAdminProdutosIdRouteImport } from './routes/_authenticated/admin.produtos.$id'
@@ -125,6 +126,12 @@ const AuthenticatedAdminEstoqueRoute =
     path: '/admin/estoque',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminPedidosRoute =
+  AuthenticatedAdminPedidosRouteImport.update({
+    id: '/admin/pedidos',
+    path: '/admin/pedidos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminTelaInicialRoute =
   AuthenticatedAdminTelaInicialRouteImport.update({
     id: '/admin/tela-inicial',
@@ -177,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/catalogo/': typeof CatalogoIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
@@ -201,6 +209,7 @@ export interface FileRoutesByTo {
   '/catalogo': typeof CatalogoIndexRoute
   '/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
@@ -228,6 +237,7 @@ export interface FileRoutesById {
   '/catalogo/': typeof CatalogoIndexRoute
   '/_authenticated/admin/categorias': typeof AuthenticatedAdminCategoriasRoute
   '/_authenticated/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/_authenticated/admin/tela-inicial': typeof AuthenticatedAdminTelaInicialRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/catalogo/'
     | '/admin/categorias'
     | '/admin/estoque'
+    | '/admin/pedidos'
     | '/admin/tela-inicial'
     | '/admin/'
     | '/admin/produtos/$id'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/admin/categorias'
     | '/admin/estoque'
+    | '/admin/pedidos'
     | '/admin/tela-inicial'
     | '/admin'
     | '/admin/produtos/$id'
@@ -305,6 +317,7 @@ export interface FileRouteTypes {
     | '/catalogo/'
     | '/_authenticated/admin/categorias'
     | '/_authenticated/admin/estoque'
+    | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/tela-inicial'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/produtos/$id'
@@ -459,6 +472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEstoqueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/pedidos': {
+      id: '/_authenticated/admin/pedidos'
+      path: '/admin/pedidos'
+      fullPath: '/admin/pedidos'
+      preLoaderRoute: typeof AuthenticatedAdminPedidosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/tela-inicial': {
       id: '/_authenticated/admin/tela-inicial'
       path: '/admin/tela-inicial'
@@ -508,6 +528,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRoute
   AuthenticatedAdminCategoriasRoute: typeof AuthenticatedAdminCategoriasRoute
   AuthenticatedAdminEstoqueRoute: typeof AuthenticatedAdminEstoqueRoute
+  AuthenticatedAdminPedidosRoute: typeof AuthenticatedAdminPedidosRoute
   AuthenticatedAdminTelaInicialRoute: typeof AuthenticatedAdminTelaInicialRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminProdutosIdRoute: typeof AuthenticatedAdminProdutosIdRoute
@@ -519,6 +540,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRoute,
   AuthenticatedAdminCategoriasRoute: AuthenticatedAdminCategoriasRoute,
   AuthenticatedAdminEstoqueRoute: AuthenticatedAdminEstoqueRoute,
+  AuthenticatedAdminPedidosRoute: AuthenticatedAdminPedidosRoute,
   AuthenticatedAdminTelaInicialRoute: AuthenticatedAdminTelaInicialRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminProdutosIdRoute: AuthenticatedAdminProdutosIdRoute,
